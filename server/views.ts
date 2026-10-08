@@ -1,4 +1,5 @@
 import { sessionLabel } from "./domain/labels";
+import { filterCandidates } from "./engine/candidateFilter";
 import { formatRupees } from "./domain/time";
 import type { RescueCase } from "./domain/types";
 import type { Store } from "./store/memoryStore";
@@ -57,5 +58,17 @@ export function caseDetail(store: Store, c: RescueCase) {
     messages: store.messagesFor(c.customerId).filter((m) => !m.caseId || m.caseId === c.id),
     audit: store.audit.filter((a) => a.caseId === c.id),
     ledger: [...store.ledger.values()].filter((l) => l.key.includes(c.id) || l.key.includes(c.paymentId)),
+    ruleBaselineSessionId: ruleBaseline(store, c),
   };
+}
+
+/** What a fixed rule ("offer the next same-price, same-type slot", ignoring the customer's words) would pick. */
+function ruleBaseline(store: Store, c: RescueCase): string | null {
+  const original = store.sessions.get(c.originalSessionId);
+  const booking = store.bookings.get(c.bookingId);
+  if (!original || !booking) return null;
+  const { candidates } = filterCandidates({
+    sessions: [...store.sessions.values()], original, policy: store.policy, hard: [], seatsNeeded: booking.seats, now: store.now(),
+  });
+  return candidates.find((x) => x.feasible)?.sessionId ?? null;
 }

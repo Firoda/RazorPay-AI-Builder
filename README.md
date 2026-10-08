@@ -14,7 +14,7 @@ If nothing fits, the customer paid twice, or they want their money back, it deli
 
 ## Status
 
-The backend is complete. The frontend is next.
+The backend and frontend are complete. Design notes are in [backend.md](backend.md) and [frontend.md](frontend.md).
 
 ## Quick start
 
@@ -25,6 +25,20 @@ npm run dev                 # http://localhost:8080
 npm test                    # 43 deterministic tests, no API key needed
 npm run eval                # golden-set evaluation against live Gemini
 ```
+
+### Frontend
+
+```bash
+npm run dev:web             # Vite dev server on http://localhost:5173 (proxies /api to :8080)
+npm run build               # builds web/dist; `npm start` then serves the app on :8080
+```
+
+Screens:
+- **Start** (`#/`): scenario quick-starts and what's real vs simulated
+- **Rescue queue** (`#/queue`)
+- **Case** (`#/case/:id`): timeline, AI recommendation with Approve / Edit / Reject / Release, customer needs with quotes, sessions matrix, and the customer's phone side by side, plus an audit trail tab
+- **Customer phone** (`#/phone/:id`)
+- **Demo controls** (`#/demo`) and **Policy** (`#/policy`)
 
 There are three AI modes, set with `AI_MODE`:
 
@@ -60,6 +74,7 @@ server/
   ai/            prompts (versioned), JSON schemas, Gemini provider, cache, offline fake
   adapters/      Razorpay (test API + simulator + webhook signature), calendar
   app.ts         REST API + demo controls
+web/             React + Vite frontend (see frontend.md)
 fixtures/        sessions, policy, 36 golden scenarios
 tests/           unit + engine-flow + HTTP tests
 eval/            golden-set evaluation vs baselines (do-nothing, fixed rule)
