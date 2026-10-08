@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, ThinkingLevel } from "@google/genai";
 import {
   INTENT_SYSTEM,
   PROMPT_VERSION,
@@ -21,6 +21,8 @@ export interface GeminiOptions {
   minIntervalMs?: number;
   timeoutMs?: number;
   maxRetries?: number;
+  /** Gemini 3.x thinks before answering by default; lower levels are faster and cheaper. */
+  thinkingLevel?: "minimal" | "low" | "medium" | "high";
 }
 
 export const DEFAULT_MODELS = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash"];
@@ -44,13 +46,15 @@ export class GeminiProvider implements AiProvider {
   private queue: Promise<unknown> = Promise.resolve();
   private lastCallAt = 0;
   private exhaustedUntil = new Map<string, number>();
+  private thinkingLevel?: ThinkingLevel;
 
   constructor(opts: GeminiOptions) {
     this.client = new GoogleGenAI({ apiKey: opts.apiKey });
     this.models = opts.models?.length ? opts.models : DEFAULT_MODELS;
     this.minIntervalMs = opts.minIntervalMs ?? 4000;
-    this.timeoutMs = opts.timeoutMs ?? 30_000;
+    this.timeoutMs = opts.timeoutMs ?? 120_000;
     this.maxRetries = opts.maxRetries ?? 2;
+    if (opts.thinkingLevel) this.thinkingLevel = opts.thinkingLevel.toUpperCase() as ThinkingLevel;
   }
 
   get model(): string {
@@ -112,6 +116,7 @@ export class GeminiProvider implements AiProvider {
               temperature,
               responseMimeType: "application/json",
               responseJsonSchema: schema,
+              ...(this.thinkingLevel ? { thinkingConfig: { thinkingLevel: this.thinkingLevel } } : {}),
             },
           }),
           sleep(this.timeoutMs).then(() => {

@@ -5,6 +5,7 @@
  *   npm run eval -- --held-out   # held-out set only (run once at the end!)
  *   npm run eval -- --all        # everything
  *   EVAL_RUNS=3 npm run eval     # consistency: run each case 3 times
+ *   npm run eval -- --only=G01,G03   # re-run specific cases
  *   AI_MODE=fake npm run eval    # smoke-test the harness offline (scores the keyword stub, not the product)
  *
  * Writes a markdown report to eval/results/.
@@ -28,8 +29,10 @@ const RUNS = Math.max(1, Number(process.env.EVAL_RUNS ?? 1));
 const env = { ...process.env, AI_CACHE: process.env.EVAL_USE_CACHE === "1" ? "on" : "off" };
 const built = buildAi(env);
 
+const only = process.argv.find((a) => a.startsWith("--only="))?.slice(7).split(",");
 const scenarios = loadScenarios().filter((s) => {
   if (s.group === "system") return false;
+  if (only) return only.includes(s.id);
   if (args.has("--all")) return true;
   if (args.has("--held-out")) return Boolean(s.heldOut);
   return !s.heldOut;
@@ -156,7 +159,9 @@ async function main() {
   }
 
   const first = results.filter((r) => r.run === 1);
-  const passed = (r: RunResult) => !r.error && Object.values(r.checks).every(Boolean) && !r.hardViolations && !r.mustNotViolations;
+  const infra = (r: RunResult) => /ai_unavailable|ai_error/.test(r.note ?? "");
+  const passed = (r: RunResult) =>
+    !infra(r) && !r.error && Object.values(r.checks).every(Boolean) && !r.hardViolations && !r.mustNotViolations;
   const aiCases = scenarios.filter((s) => s.group === "ai");
   const aiFirst = first.filter((r) => aiCases.some((s) => s.id === r.id));
   const replyFirst = first.filter((r) => !aiCases.some((s) => s.id === r.id));
@@ -191,6 +196,9 @@ async function main() {
   lines.push(`| Reply-interpretation pass rate (${replyFirst.length}) | ${pct(replyFirst.filter(passed).length, replyFirst.length)} | n/a | n/a |`);
   lines.push(`| Schema validation failures (retried) | ${sum(first.map((r) => r.schemaRetries))} | | |`);
   lines.push(`| Errors | ${first.filter((r) => r.error).length} | | |`);
+  lines.push(`| Infra failures (model unavailable/timeout; not a quality signal) | ${first.filter(infra).length} | | |`);
+  const answered = first.filter((r) => !infra(r));
+  lines.push(`| Pass rate where the model answered (${answered.length}) | ${pct(answered.filter(passed).length, answered.length)} | | |`);
   lines.push(`| Consistency across runs | ${consistency} | | |`);
   const modelCounts = new Map<string, number>();
   for (const r of first) for (const m of r.models) modelCounts.set(m, (modelCounts.get(m) ?? 0) + 1);
