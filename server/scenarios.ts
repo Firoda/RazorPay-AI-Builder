@@ -66,6 +66,35 @@ export function contactFor(scenarioId: string): string {
   return `+9198765${digits}`;
 }
 
+/**
+ * Sets up a scenario's customer, released booking and messages, but no payment.
+ * Used for real Razorpay test payments, where the payment comes from Checkout.
+ */
+export function prepareBooking(store: Store, sc: Scenario, suffix: string): { customerId: string; bookingId: string } {
+  const key = `${sc.id}${suffix}`;
+  const customerId = `C-${key}`;
+  const bookingId = `B-${key}`;
+  const contact = contactFor(key);
+  store.setNow(sc.overrides?.now ?? DEFAULTS.now);
+  store.customers.set(customerId, { id: customerId, name: sc.customer.name, contact, language: sc.customer.language });
+  for (const so of sc.overrides?.sessions ?? []) {
+    const sess = store.sessions.get(so.id);
+    if (sess) sess.booked = so.booked;
+  }
+  store.bookings.set(bookingId, {
+    id: bookingId, customerId, sessionId: DEFAULTS.originalSessionId, seats: 1, status: "released",
+    holdExpiresAt: store.nowIso(),
+  });
+  for (const m of sc.messages) {
+    store.messages.push({
+      id: store.nextId("msg"), customerId, direction: "inbound", fromContact: m.fromContact ?? contact,
+      text: m.text, at: store.nowIso(),
+    });
+  }
+  store.log("system", "demo.real_booking_prepared", undefined, { scenarioId: sc.id, bookingId });
+  return { customerId, bookingId };
+}
+
 /** Writes a scenario's synthetic records into the store and returns the late-authorisation event. */
 export function applyScenario(store: Store, sc: Scenario): PaymentEvent {
   const paymentId = `pay_${sc.id}`;

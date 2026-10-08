@@ -33,7 +33,7 @@ export class SimulatedGateway implements PaymentGateway {
   }
 }
 
-type RazorpayPaymentEntity = {
+export type RazorpayPaymentEntity = {
   id: string;
   amount: number;
   currency: string;
@@ -75,10 +75,52 @@ export class RazorpayTestGateway implements PaymentGateway {
     return this.merge(payment, (await res.json()) as RazorpayPaymentEntity);
   }
 
+  /**
+   * Razorpay is the source of truth for money state (status, amount, refunds). The local record keeps
+   * the booking link and the case deadline, which Razorpay doesn't know about.
+   */
   private merge(local: Payment, remote: RazorpayPaymentEntity): Payment {
-    const merged = { ...local, ...paymentFromRazorpayEntity(remote) , source: "razorpay_test" as const };
+    const fresh = paymentFromRazorpayEntity(remote);
+    const merged: Payment = {
+      ...local,
+      status: fresh.status,
+      amountPaise: fresh.amountPaise,
+      refundStatus: fresh.refundStatus,
+      method: fresh.method,
+      orderId: fresh.orderId ?? local.orderId,
+      capturedAt: fresh.status === "captured" ? (local.capturedAt ?? this.store.nowIso()) : local.capturedAt,
+      source: "razorpay_test",
+    };
     this.store.payments.set(merged.id, merged);
     return merged;
+  }
+
+  async createManualCaptureOrder(input: {
+    amountPaise: number;
+    receipt: string;
+    notes: Record<string, string>;
+    manualExpiryMinutes: number;
+  }): Promise<{ id: string; amount: number; currency: string; status: string }> {
+    const res = await fetch("https://api.razorpay.com/v1/orders", {
+      method: "POST",
+      headers: { Authorization: this.auth, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        amount: input.amountPaise,
+        currency: "INR",
+        receipt: input.receipt,
+        notes: input.notes,
+        // Keep the payment in `authorized` until SeatSaver decides; Razorpay auto-refunds after the expiry.
+        payment: { capture: "manual", capture_options: { manual_expiry_period: input.manualExpiryMinutes, refund_speed: "normal" } },
+      }),
+    });
+    if (!res.ok) throw new Error(`Razorpay order failed: ${res.status} ${await res.text()}`);
+    return res.json() as Promise<{ id: string; amount: number; currency: string; status: string }>;
+  }
+
+  async fetchPaymentEntity(paymentId: string): Promise<RazorpayPaymentEntity> {
+    const res = await fetch(`https://api.razorpay.com/v1/payments/${paymentId}`, { headers: { Authorization: this.auth } });
+    if (!res.ok) throw new Error(`Razorpay fetch failed: ${res.status} ${await res.text()}`);
+    return res.json() as Promise<RazorpayPaymentEntity>;
   }
 }
 
@@ -98,6 +140,15 @@ export function paymentFromRazorpayEntity(e: RazorpayPaymentEntity): Payment {
     refundStatus: e.refund_status === "full" || e.refund_status === "partial" ? "processed" : "none",
     source: "razorpay_test",
   };
+}
+
+/** Checkout success signature: HMAC-SHA256 of "order_id|payment_id" with the key secret. */
+export function verifyCheckoutSignature(orderId: string, paymentId: string, signature: string, keySecret: string): boolean {
+  if (!signature || !keySecret) return false;
+  const expected = createHmac("sha256", keySecret).update(`${orderId}|${paymentId}`).digest("hex");
+  const a = Buffer.from(expected);
+  const b = Buffer.from(signature);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
 
 /** Razorpay webhook signature: HMAC-SHA256 of the raw request body with the webhook secret. */

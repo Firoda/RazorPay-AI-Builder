@@ -16,31 +16,45 @@ import { intentJsonSchema, recommendationJsonSchema, replyJsonSchema } from "./s
 
 export interface GeminiOptions {
   apiKey: string;
-  model?: string;
+  /** Ordered fallback chain. The free tier has a separate daily quota per model. */
+  models?: string[];
   minIntervalMs?: number;
   timeoutMs?: number;
   maxRetries?: number;
 }
 
+export const DEFAULT_MODELS = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash"];
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-/** Live Gemini calls with structured JSON output, free-tier throttling and retry on rate limits. */
+/**
+ * Live Gemini calls with structured JSON output.
+ * - Calls are serialised and spaced to respect per-minute limits.
+ * - A per-day quota error marks that model exhausted and falls through to the next model in the chain
+ *   (no retries wasted on a quota that won't reset for hours).
+ * - Transient errors (per-minute 429, 503, timeouts) retry with backoff on the same model.
+ */
 export class GeminiProvider implements AiProvider {
   readonly name = "gemini";
-  readonly model: string;
+  readonly models: string[];
   private client: GoogleGenAI;
   private minIntervalMs: number;
   private timeoutMs: number;
   private maxRetries: number;
   private queue: Promise<unknown> = Promise.resolve();
   private lastCallAt = 0;
+  private exhaustedUntil = new Map<string, number>();
 
   constructor(opts: GeminiOptions) {
     this.client = new GoogleGenAI({ apiKey: opts.apiKey });
-    this.model = opts.model ?? "gemini-2.5-flash";
+    this.models = opts.models?.length ? opts.models : DEFAULT_MODELS;
     this.minIntervalMs = opts.minIntervalMs ?? 4000;
     this.timeoutMs = opts.timeoutMs ?? 30_000;
-    this.maxRetries = opts.maxRetries ?? 3;
+    this.maxRetries = opts.maxRetries ?? 2;
+  }
+
+  get model(): string {
+    return this.models.join(" → ");
   }
 
   extractIntent(input: IntentPromptInput): Promise<AiResult> {
@@ -55,14 +69,33 @@ export class GeminiProvider implements AiProvider {
     return this.call(REPLY_SYSTEM, replyUserContent(input), replyJsonSchema, 0.2);
   }
 
-  // Calls are serialised so the free-tier requests-per-minute limit is respected.
   private call(system: string, user: string, schema: object, temperature: number): Promise<AiResult> {
-    const run = this.queue.then(() => this.callWithRetry(system, user, schema, temperature));
+    const run = this.queue.then(() => this.callChain(system, user, schema, temperature));
     this.queue = run.catch(() => undefined);
     return run;
   }
 
-  private async callWithRetry(system: string, user: string, schema: object, temperature: number): Promise<AiResult> {
+  private async callChain(system: string, user: string, schema: object, temperature: number): Promise<AiResult> {
+    const errors: string[] = [];
+    for (const model of this.models) {
+      if ((this.exhaustedUntil.get(model) ?? 0) > Date.now()) continue;
+      try {
+        return await this.callModel(model, system, user, schema, temperature);
+      } catch (err) {
+        const msg = String((err as Error)?.message ?? err);
+        errors.push(`${model}: ${msg.slice(0, 160)}`);
+        if (/PerDay/i.test(msg)) {
+          const retry = Number(msg.match(/"retryDelay":\s*"(\d+)s"/)?.[1] ?? 3600);
+          this.exhaustedUntil.set(model, Date.now() + retry * 1000);
+          continue; // daily quota gone: try the next model
+        }
+        throw new AiUnavailableError(`Gemini call failed: ${errors.join(" | ")}`);
+      }
+    }
+    throw new AiUnavailableError(`All Gemini models unavailable (daily free-tier quotas): ${errors.join(" | ") || "all exhausted"}`);
+  }
+
+  private async callModel(model: string, system: string, user: string, schema: object, temperature: number): Promise<AiResult> {
     let lastError: unknown;
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       const wait = this.lastCallAt + this.minIntervalMs - Date.now();
@@ -72,7 +105,7 @@ export class GeminiProvider implements AiProvider {
       try {
         const res = await Promise.race([
           this.client.models.generateContent({
-            model: this.model,
+            model,
             contents: user,
             config: {
               systemInstruction: system,
@@ -85,25 +118,19 @@ export class GeminiProvider implements AiProvider {
             throw new Error(`Gemini timeout after ${this.timeoutMs}ms`);
           }),
         ]);
-        const text = res.text ?? "";
         return {
-          data: JSON.parse(text),
-          meta: {
-            provider: this.name,
-            model: this.model,
-            promptVersion: PROMPT_VERSION,
-            latencyMs: Date.now() - started,
-            cached: false,
-          },
+          data: JSON.parse(res.text ?? ""),
+          meta: { provider: this.name, model, promptVersion: PROMPT_VERSION, latencyMs: Date.now() - started, cached: false },
         };
       } catch (err) {
         lastError = err;
         const msg = String((err as Error)?.message ?? err);
+        if (/PerDay/i.test(msg)) throw err; // handled by the chain
         const retryable = /429|RESOURCE_EXHAUSTED|503|UNAVAILABLE|timeout|overloaded/i.test(msg);
         if (!retryable || attempt === this.maxRetries) break;
-        await sleep(Math.min(30_000, 2000 * 2 ** attempt));
+        await sleep(Math.min(30_000, 5000 * 2 ** attempt));
       }
     }
-    throw new AiUnavailableError(`Gemini call failed: ${String((lastError as Error)?.message ?? lastError)}`);
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
   }
 }

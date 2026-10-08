@@ -55,6 +55,7 @@ interface RunResult {
   schemaRetries: number;
   aiCalls: number;
   latencyMs: number;
+  models: string[];
   note?: string;
   error?: string;
 }
@@ -63,7 +64,7 @@ async function runScenario(sc: Scenario, run: number): Promise<RunResult> {
   const { store, engine } = buildContainer(env, built.ai);
   const base: RunResult = {
     id: sc.id, run, decision: "", offered: [], checks: {}, hardViolations: 0, mustNotViolations: 0,
-    falseMoneyActions: 0, schemaRetries: 0, aiCalls: 0, latencyMs: 0,
+    falseMoneyActions: 0, schemaRetries: 0, aiCalls: 0, latencyMs: 0, models: [],
   };
   try {
     const event = applyScenario(store, sc);
@@ -109,6 +110,7 @@ async function runScenario(sc: Scenario, run: number): Promise<RunResult> {
 
     const aiAudit = store.audit.filter((a) => a.caseId === c.id && a.actor === "ai");
     base.aiCalls = aiAudit.length;
+    base.models = [...new Set(aiAudit.map((a) => (a.detail as { meta?: { model?: string } })?.meta?.model ?? "?"))];
     base.latencyMs = aiAudit.reduce((sum, a) => sum + ((a.detail as { meta?: { latencyMs?: number } })?.meta?.latencyMs ?? 0), 0);
     base.schemaRetries = store.audit.filter(
       (a) => a.caseId === c.id && /^ai\..*\.validated$/.test(a.action) && (a.detail as { ok: boolean }).ok === false,
@@ -190,6 +192,9 @@ async function main() {
   lines.push(`| Schema validation failures (retried) | ${sum(first.map((r) => r.schemaRetries))} | | |`);
   lines.push(`| Errors | ${first.filter((r) => r.error).length} | | |`);
   lines.push(`| Consistency across runs | ${consistency} | | |`);
+  const modelCounts = new Map<string, number>();
+  for (const r of first) for (const m of r.models) modelCounts.set(m, (modelCounts.get(m) ?? 0) + 1);
+  lines.push(`| Models that answered | ${[...modelCounts].map(([m, n]) => `${m} (${n})`).join(", ") || "none"} | | |`);
   lines.push(`| Avg AI latency per case | ${Math.round(sum(first.map((r) => r.latencyMs)) / Math.max(1, first.length))} ms | | |`);
   lines.push("");
   lines.push("## Per case (run 1)");
@@ -200,7 +205,7 @@ async function main() {
     const sc = scenarios.find((s) => s.id === r.id)!;
     const checks = Object.entries(r.checks).map(([k, v]) => `${v ? "✓" : "✗"}${k}`).join(" ");
     const viol = [r.hardViolations ? `hard×${r.hardViolations}` : "", r.mustNotViolations ? `mustNot×${r.mustNotViolations}` : ""].filter(Boolean).join(" ");
-    lines.push(`| ${r.id}: ${sc.title} | ${sc.heldOut ? "yes" : ""} | ${passed(r) ? "PASS" : "**FAIL**"} | ${r.decision} | ${r.offered.join(", ")} | ${checks} ${viol} | ${r.error ?? r.note ?? ""} |`);
+    lines.push(`| ${r.id}: ${sc.title} | ${sc.heldOut ? "yes" : ""} | ${passed(r) ? "PASS" : "**FAIL**"} | ${r.decision} | ${r.offered.join(", ")} | ${checks} ${viol} | ${r.error ?? r.note ?? ""}${r.models.length ? ` [${r.models.join(", ")}]` : ""} |`);
   }
 
   mkdirSync(join(process.cwd(), "eval", "results"), { recursive: true });

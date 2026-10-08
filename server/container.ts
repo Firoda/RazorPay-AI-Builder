@@ -3,20 +3,26 @@ import { CalendarAdapter } from "./adapters/calendar";
 import { GatewayRouter, RazorpayTestGateway, SimulatedGateway } from "./adapters/razorpay";
 import { CachedProvider } from "./ai/cache";
 import { FakeProvider } from "./ai/fake";
-import { GeminiProvider } from "./ai/gemini";
+import { DEFAULT_MODELS, GeminiProvider } from "./ai/gemini";
 import type { AiProvider } from "./ai/provider";
 import { CaseEngine } from "./engine/caseEngine";
+import { RealPaymentFlow } from "./realPayment";
 import { Store } from "./store/memoryStore";
 
 export interface Container {
   store: Store;
   engine: CaseEngine;
   ai: AiProvider;
+  realPayments: RealPaymentFlow;
   config: { aiMode: string; model: string; razorpayTest: boolean; webhookSecret: string; adminToken: string };
 }
 
 export function buildAi(env: NodeJS.ProcessEnv = process.env): { ai: AiProvider; mode: string; model: string } {
-  const model = env.GEMINI_MODEL || "gemini-2.5-flash";
+  const models = (env.GEMINI_MODELS || env.GEMINI_MODEL || DEFAULT_MODELS.join(","))
+    .split(",")
+    .map((m) => m.trim())
+    .filter(Boolean);
+  const model = models.join(" → ");
   const cacheFile = join(process.cwd(), ".cache", "ai-cache.json");
   const requested = env.AI_MODE || (env.GEMINI_API_KEY ? "gemini" : "fake");
   if (requested === "fake") return { ai: new FakeProvider(), mode: "fake", model: "fake-heuristic" };
@@ -24,7 +30,7 @@ export function buildAi(env: NodeJS.ProcessEnv = process.env): { ai: AiProvider;
   if (!env.GEMINI_API_KEY) throw new Error("AI_MODE=gemini requires GEMINI_API_KEY (or set AI_MODE=fake)");
   const gemini = new GeminiProvider({
     apiKey: env.GEMINI_API_KEY,
-    model,
+    models,
     minIntervalMs: Number(env.GEMINI_MIN_INTERVAL_MS ?? 4000),
   });
   const ai = env.AI_CACHE === "off" ? gemini : new CachedProvider(gemini, cacheFile, "read-write");
@@ -43,6 +49,7 @@ export function buildContainer(env: NodeJS.ProcessEnv = process.env, aiOverride?
     store,
     engine,
     ai: built.ai,
+    realPayments: new RealPaymentFlow(store, engine, real, env.RAZORPAY_KEY_ID ?? "", env.RAZORPAY_KEY_SECRET ?? ""),
     config: {
       aiMode: built.mode,
       model: built.model,

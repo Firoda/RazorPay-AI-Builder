@@ -1,3 +1,4 @@
+import { join } from "node:path";
 import express, { type NextFunction, type Request, type Response } from "express";
 import { paymentFromRazorpayEntity, verifyWebhookSignature } from "./adapters/razorpay";
 import type { Container } from "./container";
@@ -147,7 +148,26 @@ export function createApp(container: Container) {
     res.json(store.policy);
   });
 
+  // Real Razorpay TEST-mode payment for the hero case (see server/realPayment.ts)
+  demo.post("/real-order", wrap(async (req, res) => {
+    res.json(await container.realPayments.createOrder((req.body?.scenarioId as string) ?? "G01"));
+  }));
+
+  demo.post("/real-payment", wrap(async (req, res) => {
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body ?? {};
+    if (![razorpay_order_id, razorpay_payment_id, razorpay_signature].every((v) => typeof v === "string" && v)) {
+      throw new EngineError("razorpay_order_id, razorpay_payment_id and razorpay_signature are required");
+    }
+    res.json(await container.realPayments.confirmPayment({
+      orderId: razorpay_order_id, paymentId: razorpay_payment_id, signature: razorpay_signature,
+    }));
+  }));
+
   app.use("/api/demo", demo);
+
+  app.get("/pay-test", (_req, res) => {
+    res.sendFile(join(process.cwd(), "server", "static", "pay-test.html"));
+  });
 
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof EngineError) return res.status(err.status).json({ error: err.message });
