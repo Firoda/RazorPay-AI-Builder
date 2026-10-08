@@ -1,0 +1,18 @@
+{
+  "studio": { "name": "Clay & Co.", "city": "Bengaluru", "owner": "Ritu" },
+  "policy": {
+    "maxDaysAhead": 14,
+    "samePriceOnly": true,
+    "equivalentTypes": {
+      "wheel_basics": ["wheel_basics"],
+      "hand_building": ["hand_building"],
+      "glazing_masterclass": ["glazing_masterclass"]
+    },
+    "maxUnansweredContacts": 2,
+    "escalateBeforeDeadlineHours": 6,
+    "minHoursBeforeStart": 2,
+    "autonomy": "L1",
+    "autoApprovePatterns": [],
+    "restoreOriginalIfFree": true
+  }
+}

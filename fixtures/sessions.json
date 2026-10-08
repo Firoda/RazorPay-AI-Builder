@@ -1,0 +1,12 @@
+[
+  { "id": "S-1011-AM",  "workshopType": "wheel_basics",        "date": "2026-10-11", "start": "10:00", "end": "12:30", "instructor": "Arjun", "pricePaise": 200000, "capacity": 8, "booked": 8, "language": "en-hi" },
+  { "id": "S-1011-PM",  "workshopType": "wheel_basics",        "date": "2026-10-11", "start": "17:00", "end": "19:30", "instructor": "Meera", "pricePaise": 200000, "capacity": 8, "booked": 5, "language": "en-hi" },
+  { "id": "S-1011-HB",  "workshopType": "hand_building",       "date": "2026-10-11", "start": "17:00", "end": "19:00", "instructor": "Meera", "pricePaise": 150000, "capacity": 8, "booked": 4, "language": "en-hi" },
+  { "id": "S-1014-EVE", "workshopType": "wheel_basics",        "date": "2026-10-14", "start": "19:00", "end": "21:30", "instructor": "Meera", "pricePaise": 200000, "capacity": 8, "booked": 4, "language": "en-hi" },
+  { "id": "S-1017-AM",  "workshopType": "wheel_basics",        "date": "2026-10-17", "start": "10:00", "end": "12:30", "instructor": "Arjun", "pricePaise": 200000, "capacity": 8, "booked": 6, "language": "en-hi" },
+  { "id": "S-1018-AM",  "workshopType": "wheel_basics",        "date": "2026-10-18", "start": "10:00", "end": "12:30", "instructor": "Arjun", "pricePaise": 200000, "capacity": 8, "booked": 7, "language": "en-hi" },
+  { "id": "S-1018-GL",  "workshopType": "glazing_masterclass", "date": "2026-10-18", "start": "11:00", "end": "14:00", "instructor": "Arjun", "pricePaise": 300000, "capacity": 8, "booked": 4, "language": "en-hi" },
+  { "id": "S-1018-PM",  "workshopType": "wheel_basics",        "date": "2026-10-18", "start": "16:00", "end": "18:30", "instructor": "Meera", "pricePaise": 200000, "capacity": 8, "booked": 2, "language": "en-hi" },
+  { "id": "S-1025-AM",  "workshopType": "wheel_basics",        "date": "2026-10-25", "start": "10:00", "end": "12:30", "instructor": "Arjun", "pricePaise": 200000, "capacity": 8, "booked": 3, "language": "en-hi" },
+  { "id": "S-1031-AM",  "workshopType": "wheel_basics",        "date": "2026-10-31", "start": "10:00", "end": "12:30", "instructor": "Arjun", "pricePaise": 200000, "capacity": 8, "booked": 0, "language": "en-hi" }
+]
