@@ -56,6 +56,7 @@ const REASONS: Record<string, string> = {
   captured_after_acceptance: "Seat reserved, then the held payment was captured once.",
   rebooked_already_captured: "Rebooked onto the new session; the payment was already captured.",
   capture_window_expired: "Razorpay's capture window passed, so the money returned automatically.",
+  offer_contradicts_request: "The AI's offer contradicted a month, date or class the customer asked for, so it was blocked. Decide manually.",
   unverified_constraints: "Some of the customer's needs can't be checked automatically. Please review.",
   intent_unclear: "Asked the customer whether they want another session or a refund.",
   customer_requested_other: "The customer wants a different option.",

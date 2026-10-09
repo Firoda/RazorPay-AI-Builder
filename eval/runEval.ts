@@ -179,7 +179,7 @@ async function main() {
     : "n/a (EVAL_RUNS=1)";
 
   const lines: string[] = [];
-  const set = args.has("--all") ? "all" : args.has("--held-out") ? "held-out" : "dev";
+  const set = only ? `selected-${only.join("-")}` : args.has("--all") ? "all" : args.has("--held-out") ? "held-out" : "dev";
   lines.push(`# SeatSaver eval: ${new Date().toISOString()}`);
   lines.push("");
   lines.push(`- Provider: **${built.mode} / ${built.model}**${built.mode === "fake" ? " (keyword stub: harness smoke test, NOT product quality)" : ""}`);

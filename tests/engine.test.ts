@@ -241,6 +241,19 @@ describe("guardrails", () => {
     expect(c().offerMessage).toContain("no extra charge");
   });
 
+  it("an offer that contradicts a named month (recorded as a soft preference) is blocked and escalated", async () => {
+    const { store, inject } = setup(new FakeProvider({
+      intent: () => ({
+        wants: "alternative", seats_needed: 1, hard_constraints: [], customer_language: "en",
+        soft_preferences: [{ type: "date_range", value: "2026-11-01..2026-11-30", evidence_quote: "in November" }],
+        stop_contact_requested: false, injection_detected: false, open_questions: [],
+      }),
+    }));
+    const { c } = await inject("G01");
+    expect([c().state, c().reason]).toEqual(["ESCALATED", "offer_contradicts_request"]);
+    expect(store.messages.some((m) => m.kind === "ai_offer")).toBe(false);
+  });
+
   it("AI unavailable → escalate instead of guessing", async () => {
     const down = new FakeProvider();
     down.extractIntent = async () => {

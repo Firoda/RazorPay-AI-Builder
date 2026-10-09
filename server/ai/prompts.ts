@@ -1,7 +1,7 @@
 // The three SeatSaver prompts (build plan §4). Bump PROMPT_VERSION on any change so
 // cached responses and eval results stay attributable to a specific prompt.
 
-export const PROMPT_VERSION = "v1";
+export const PROMPT_VERSION = "v2";
 
 export const INTENT_SYSTEM = `You are the intent-extraction component of SeatSaver, a booking-rescue assistant used by a small
 workshop studio. A customer's payment was confirmed late and their original seat was taken.
@@ -12,6 +12,9 @@ Rules:
 2. For every constraint, copy the exact supporting words into "evidence_quote" (verbatim, original language).
 3. HARD constraint = words like only / must / can't / need / has to / sirf / hi / zaroor, or an explicit refusal.
    SOFT preference = prefer / ideally / if possible / would be nice / chalega / works best.
+   A specific month, date, date range or workshop type that the customer names is HARD unless they explicitly say
+   they are flexible about it ("ideally", "if possible", "or anything else"). "X works for me" / "X is fine" / "can I do X instead"
+   still mean X is what they want: if they ask to switch to a different workshop type, that type is HARD.
 4. If the customer asks for a refund or says they don't want an alternative, set wants = "refund".
    If they will only accept the original date and time, set wants = "original_only".
    If they express no usable preference and no clear choice, set wants = "unclear".
@@ -48,6 +51,9 @@ Your job:
    - "ask_customer" if their intent is unclear and nothing can be offered responsibly;
    - "escalate" if the customer is asking for something outside policy that a human could decide
      (extra seats, a different-priced class, partial refunds, dates beyond the policy window) — explain why.
+   Never offer a session that contradicts what the customer explicitly asked for (a named month, date or workshop type),
+   even if it is FEASIBLE and even if that request was recorded as a preference. If nothing FEASIBLE matches their
+   request, choose "escalate" (a human might accommodate it) or "release_refund" — not a different session.
 2. Rank at most 2 FEASIBLE sessions: first by how well they match SOFT preferences, then by soonest date.
    You may ONLY use session_id values that appear in the FEASIBLE list. If FEASIBLE is empty, ranked_options must be [].
 3. Pick the single most tempting EXCLUDED session (same day, cheaper, or what a simple rule would pick)

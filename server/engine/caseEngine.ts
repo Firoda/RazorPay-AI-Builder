@@ -16,7 +16,7 @@ import {
   type PaymentEvent,
 } from "../domain/types";
 import type { Store } from "../store/memoryStore";
-import { filterCandidates } from "./candidateFilter";
+import { filterCandidates, satisfies } from "./candidateFilter";
 import { checkEligibility } from "./eligibility";
 import { fillPlaceholders, template } from "./messages";
 import { messageNeedsFallback, validateIntent, validateRecommendation, validateReply } from "./validator";
@@ -178,6 +178,11 @@ export class CaseEngine {
 
     switch (rec.decision) {
       case "offer_alternative": {
+        const contradicted = this.contradictsExplicitRequest(intent, rec.ranked_options.map((o) => o.session_id));
+        if (contradicted.length) {
+          this.s.log("system", "guard.offer_contradicts_request", c.id, { contradicted });
+          return this.escalate(c, "offer_contradicts_request");
+        }
         c.offeredSessionIds = rec.ranked_options.map((o) => o.session_id);
         c.offerMessage = this.composeOffer(c, c.offeredSessionIds, rec);
         this.transition(c, "MERCHANT_REVIEW", { decision: "offer_alternative", reason: unverifiedConstraints.length ? "unverified_constraints" : undefined });
@@ -651,6 +656,21 @@ export class CaseEngine {
     };
     this.s.learning.push(rec);
     this.s.log("system", "learning.recorded", c.id, rec);
+  }
+
+  /**
+   * Safety net: a month, date or workshop type the customer named must never be contradicted by an offer,
+   * even when the AI recorded it as a soft preference. Returns the offending (sessionId, constraint) pairs.
+   */
+  private contradictsExplicitRequest(intent: ExtractedIntent, sessionIds: string[]): { sessionId: string; constraint: string }[] {
+    const explicit = intent.soft_preferences.filter((p) => ["exact_date", "date_range", "workshop_type"].includes(p.type));
+    const out: { sessionId: string; constraint: string }[] = [];
+    for (const id of sessionIds) {
+      const sess = this.s.sessions.get(id);
+      if (!sess) continue;
+      for (const p of explicit) if (satisfies(sess, p) === false) out.push({ sessionId: id, constraint: `${p.type}:${p.value}` });
+    }
+    return out;
   }
 
   /** Retrieve up to 3 past merchant corrections that share a constraint type with this case. */

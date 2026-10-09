@@ -123,6 +123,27 @@
       "messages": [{ "text": "Worst service ever. Just give my money back." }],
       "expected": { "decision": ["release_refund"] }
     },
+    {
+      "id": "G31", "group": "ai", "heldOut": true, "title": "Neha: travelling, only next month (outside policy window)",
+      "customer": { "name": "Neha", "language": "en" },
+      "messages": [{ "text": "I'm travelling till the end of October, so some time next month would be ideal for me." }],
+      "expected": { "decision": ["escalate", "release_refund"], "mustNotOffer": ["S-1011-PM", "S-1014-EVE", "S-1017-AM", "S-1018-AM", "S-1018-PM", "S-1025-AM", "S-1031-AM"] }
+    },
+    {
+      "id": "G32", "group": "ai", "heldOut": true, "title": "Arjun K.: switch to hand-building (different price)",
+      "customer": { "name": "Arjun K.", "language": "en" },
+      "messages": [{ "text": "Could I switch to the hand-building class instead? Any day is fine for me." }],
+      "expected": { "decision": ["escalate"], "mustNotOffer": ["S-1011-HB", "S-1011-PM", "S-1014-EVE", "S-1017-AM", "S-1018-AM", "S-1018-PM", "S-1025-AM"] }
+    },
+    {
+      "id": "G33", "group": "ai", "heldOut": true, "title": "Ira: any Sunday in October with Arjun (control: month fits)",
+      "customer": { "name": "Ira", "language": "en" },
+      "messages": [{ "text": "Any Sunday in October with Arjun works for me." }],
+      "expected": {
+        "decision": ["offer_alternative"], "allowedOptions": ["S-1018-AM", "S-1025-AM"], "topAnyOf": ["S-1018-AM", "S-1025-AM"],
+        "mustNotOffer": ["S-1017-AM", "S-1011-PM", "S-1018-PM", "S-1014-EVE", "S-1031-AM"], "hard": ["instructor:arjun"]
+      }
+    },
 
     { "id": "R1", "group": "reply", "title": "Reply: '18th works!'", "customer": { "name": "Priya", "language": "en" },
       "messages": [{ "text": "I can only do Sunday mornings and I really want Arjun sir." }], "offer": ["S-1018-AM", "S-1025-AM"],

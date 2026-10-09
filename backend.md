@@ -2,7 +2,7 @@
 
 This is the reference for how the SeatSaver backend works and why it is built this way. It goes alongside the two planning documents in the parent folder: `01_Concept1_Product_Framework.md` (the product thinking) and `02_Concept1_Prototype_Build_Plan.md` (the build plan).
 
-Last updated 9 Oct 2026.
+Last updated 9 Oct 2026 (prompt v2, held-out eval).
 
 ---
 
@@ -53,6 +53,9 @@ If nothing fits, the customer paid twice, or they want a refund, it deliberately
 | D27 | **Offline `FakeProvider`** (a keyword heuristic) for tests and running without a key | Deterministic tests; clearly *not* the product's intelligence | `ai/fake.ts` |
 | D28 | **The eval counts infrastructure failures separately** and never as quality passes | A Google outage that causes an escalation must not look like a correct decision | `eval/runEval.ts` |
 | D29 | **Synthetic data only** | Privacy, plus the brief allows it; real customer data never goes to the model | `fixtures/` |
+| D30 | **Prompt v2: a named month, date or workshop type is a must-have** unless the customer says they're flexible; the recommender must never offer a session that contradicts an explicit request and should escalate or release instead | The v1 misses (G16 dev, G25 held-out) came from "X works for me" being read as a soft preference, then contradicted by the offer | `ai/prompts.ts` (`PROMPT_VERSION = "v2"`) |
+| D31 | **Code safety net:** if an offer contradicts a month, date or workshop type the customer named (even one recorded as soft), the case escalates (`offer_contradicts_request`) | Defence in depth: correctness shouldn't rely on the model labelling hard vs soft perfectly | `caseEngine.contradictsExplicitRequest` + test |
+| D32 | **Held-out discipline:** prompts are tuned only on dev cases. Once a held-out case informs a fix (G25), it is retired as "unseen" and new held-out cases (G31–G33) are written *before* the next run, including a positive control (G33) to catch over-correction | Keeps the "unseen" number honest | `fixtures/scenarios.json`, `eval/runEval.ts --only=` |
 
 ---
 
@@ -92,8 +95,8 @@ RazorPay-AI-Builder/
 ├─ fixtures/
 │  ├─ sessions.json         Clay & Co. calendar (10 sessions; the original Sun 11 Oct 10 AM is full)
 │  ├─ policy.json           Studio and merchant policy
-│  └─ scenarios.json        36 golden scenarios (ai / reply / system; held-out marked)
-├─ tests/                   43 tests: deterministic units, engine flows for every system case, HTTP + webhook
+│  └─ scenarios.json        39 golden scenarios (ai / reply / system; held-out marked)
+├─ tests/                   44 tests: deterministic units, engine flows for every system case, guardrails, HTTP + webhook
 ├─ eval/
 │  ├─ runEval.ts            Golden-set eval vs baselines (do nothing, fixed rule)
 │  └─ results/              Markdown reports per run
@@ -195,25 +198,34 @@ The full table is in `README.md`. The frontend uses:
 
 ---
 
-## 6. Evaluation results so far
+## 6. Evaluation results
 
-These are `gemini-3.8-flash` results on the dev set, with synthetic data and one run each. The reports are in `eval/results/`.
+Everything below is `gemini-3.8-flash` with `thinking: low`, synthetic data, one run per case. The reports are in `eval/results/`.
 
-| | Result |
+### Prompt v1 (8–9 Oct)
+
+| Set | Result |
 |---|---|
-| Cases where Gemini answered | 15 of 18 |
-| Correct among those | **15 / 15** |
-| Hard-constraint / must-not-offer violations | **0 / 0** (fixed-rule baseline: 3 / 4) |
-| False money actions | **0** |
-| Fixed-rule baseline decision pass rate | 0% |
-| Do-nothing baseline | 29–33% |
-| Unresolved: Google 503 / timeouts | G13, G16, G28 (not re-run, by owner's decision) |
+| Dev (18 cases) | **17 / 18 correct**, all answered. Miss: G16 (asked for the premium Glazing class; got Wheel Basics offers instead of an escalation) |
+| Held-out (5 cases, run once) | **3 / 4 answered correct** (G12 ✓, G15 ✓, G29 ✓, G25 ✗). G27 was a Google timeout (not counted either way) |
+| Safety | 0 hard-constraint violations, **0 false money actions**, 1 must-not-offer violation (G25 offered October sessions to a "November" request) |
 
-Not run yet: the 5 held-out cases (G12, G15, G25, G27, G29).
+### Prompt v2 + code safety net (9 Oct)
 
-Note: the report `2026-10-08T18-32-30` was produced on the earlier free-tier key using the fallback chain (3.5, 3.6 and 3.7 Flash). It is kept for history, but the current numbers above are 3.8-flash only.
+| Set | Result |
+|---|---|
+| Dev regression (G16 + G01, G13, G28) | **4 / 4**. G16 now escalates; the soft-preference and offer cases didn't regress |
+| **New held-out (G31–G33, written before running, run once)** | **3 / 3**. G31 "next month" → escalated; G32 "switch to hand-building" → escalated; G33 "any Sunday in October with Arjun" (positive control) → correct offer |
+| Safety | **0 hard-constraint, 0 must-not-offer, 0 false money actions** |
 
----
+Baselines on the same cases: the fixed rule ("offer the next same-price slot") passed **0%** of decision cases, with violations in every run. Doing nothing passed only the release cases.
+
+### Honest caveats
+
+- **Small sample:** 18 dev + 8 held-out synthetic cases, one run each. This shows decision quality on designed cases, not real-world accuracy.
+- **G25 is no longer unseen** (it informed the v2 fix). **G27** has never received a model answer because of Google timeouts.
+- **v2 hasn't been re-run on the full dev set,** only on the 4 most relevant cases, to limit cost.
+- The report `2026-10-08T18-32-30` used the earlier free-tier fallback chain (3.5–3.7 Flash) and is kept only for history.
 
 ## 7. Configuration
 
@@ -238,4 +250,4 @@ Note: the report `2026-10-08T18-32-30` was produced on the earlier free-tier key
 - **Single instance:** state is lost on restart (by design for the demo; the Reset button reseeds it).
 - **Webhooks:** they need the public URL from deployment; not configured yet.
 - **No real-world measurement:** learning is retrieval of past merchant corrections as few-shot examples, not model retraining.
-- **Held-out eval:** pending; run once before writing the product note.
+- **Remaining eval gaps:** G27 never answered (timeouts); v2 not re-run on the full dev set.
