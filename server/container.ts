@@ -31,8 +31,8 @@ export function buildAi(env: NodeJS.ProcessEnv = process.env): { ai: AiProvider;
   const gemini = new GeminiProvider({
     apiKey: env.GEMINI_API_KEY,
     models,
-    minIntervalMs: Number(env.GEMINI_MIN_INTERVAL_MS ?? 4000),
-    timeoutMs: Number(env.GEMINI_TIMEOUT_MS ?? 120_000),
+    minIntervalMs: Number(env.GEMINI_MIN_INTERVAL_MS || 4000),
+    timeoutMs: Number(env.GEMINI_TIMEOUT_MS || 120_000),
     thinkingLevel: (env.GEMINI_THINKING || "low") as "minimal" | "low" | "medium" | "high" | undefined,
   });
   const ai = env.AI_CACHE === "off" ? gemini : new CachedProvider(gemini, cacheFile, "read-write");
@@ -56,8 +56,8 @@ export function buildContainer(env: NodeJS.ProcessEnv = process.env, aiOverride?
       aiMode: built.mode,
       model: built.model,
       razorpayTest: Boolean(real),
-      webhookSecret: env.RAZORPAY_WEBHOOK_SECRET ?? "",
-      adminToken: env.DEMO_ADMIN_TOKEN ?? "",
+      webhookSecret: env.RAZORPAY_WEBHOOK_SECRET || "",
+      adminToken: env.DEMO_ADMIN_TOKEN || "",
     },
   };
 }

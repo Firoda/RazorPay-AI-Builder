@@ -11,7 +11,8 @@ try {
 }
 
 const container = buildContainer();
-const port = 3000;
+// AI Studio expects 3000; Cloud Run and other hosts inject PORT.
+const port = Number(process.env.PORT || 3000);
 const app = createApp(container);
 const webDist = join(process.cwd(), "web", "dist");
 
@@ -25,7 +26,8 @@ if (process.env.NODE_ENV !== "production") {
   app.use(vite.middlewares);
 } else if (existsSync(webDist)) {
   app.use(express.static(webDist));
-  app.get("*", (req, res, next) => {
+  // SPA fallback. (Express 5 rejects the bare "*" route pattern, so this is plain middleware.)
+  app.use((req, res, next) => {
     if (req.method === "GET" && !req.path.startsWith("/api") && !req.path.startsWith("/webhooks") && !req.path.startsWith("/pay-test")) {
       return res.sendFile(join(webDist, "index.html"));
     }

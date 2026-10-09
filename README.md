@@ -21,7 +21,7 @@ The backend and frontend are complete. Design notes are in [backend.md](backend.
 ```bash
 npm install
 cp .env.example .env        # add GEMINI_API_KEY (free from Google AI Studio)
-npm run dev                 # http://localhost:8080
+npm run dev                 # UI + API on http://localhost:3000 (or $PORT), Vite in middleware mode
 npm test                    # 43 deterministic tests, no API key needed
 npm run eval                # golden-set evaluation against live Gemini
 ```
@@ -29,8 +29,8 @@ npm run eval                # golden-set evaluation against live Gemini
 ### Frontend
 
 ```bash
-npm run dev:web             # Vite dev server on http://localhost:5173 (proxies /api to :8080)
-npm run build               # builds web/dist; `npm start` then serves the app on :8080
+npm run dev:web             # optional standalone Vite on :5173 (proxies /api to :3000)
+npm run build               # builds web/dist; `npm start` (NODE_ENV=production) serves it (npm start also builds if missing)
 ```
 
 Screens:

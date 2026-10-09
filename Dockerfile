@@ -8,4 +8,4 @@ RUN npx vite build --config web/vite.config.ts
 ENV NODE_ENV=production
 # Cloud Run injects PORT (default 8080); the server reads it.
 EXPOSE 8080
-CMD ["npx", "tsx", "server/index.ts"]
+CMD ["npx", "tsx", "server.ts"]

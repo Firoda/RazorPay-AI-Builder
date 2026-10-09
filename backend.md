@@ -55,6 +55,7 @@ If nothing fits, the customer paid twice, or they want a refund, it deliberately
 | D29 | **Synthetic data only** | Privacy, plus the brief allows it; real customer data never goes to the model | `fixtures/` |
 | D30 | **Prompt v2: a named month, date or workshop type is a must-have** unless the customer says they're flexible; the recommender must never offer a session that contradicts an explicit request and should escalate or release instead | The v1 misses (G16 dev, G25 held-out) came from "X works for me" being read as a soft preference, then contradicted by the offer | `ai/prompts.ts` (`PROMPT_VERSION = "v2"`) |
 | D31 | **Code safety net:** if an offer contradicts a month, date or workshop type the customer named (even one recorded as soft), the case escalates (`offer_contradicts_request`) | Defence in depth: correctness shouldn't rely on the model labelling hard vs soft perfectly | `caseEngine.contradictsExplicitRequest` + test |
+| D33 | **Hosting on Google AI Studio / Cloud Run.** Kept AI Studio's `server.ts` structure, but fixed three regressions from its import: the deleted `package-lock.json` (restored), a hard-coded port (now `PORT \|\| 3000`), and an Express-5-incompatible `app.get("*")` that crashed production mode (now middleware). Empty env values now fall back to defaults (an empty timeout used to mean 0 ms) | The hosted app must boot in both dev and production modes, on AI Studio and on direct Cloud Run | `server.ts`, `container.ts` |
 | D32 | **Held-out discipline:** prompts are tuned only on dev cases. Once a held-out case informs a fix (G25), it is retired as "unseen" and new held-out cases (G31–G33) are written *before* the next run, including a positive control (G33) to catch over-correction | Keeps the "unseen" number honest | `fixtures/scenarios.json`, `eval/runEval.ts --only=` |
 
 ---
@@ -63,8 +64,13 @@ If nothing fits, the customer paid twice, or they want a refund, it deliberately
 
 ```
 RazorPay-AI-Builder/
+├─ server.ts                Entry point (added by AI Studio import, fixed): loads .env, builds the container, mounts createApp;
+│                           dev = Vite middleware, production = serves web/dist with SPA fallback; port = PORT || 3000
+├─ metadata.json            AI Studio app metadata (server-side Gemini capability)
+├─ Dockerfile               Direct Cloud Run deploy (fallback path)
+├─ scripts/ensure-build.mjs prestart: builds web/dist if missing
 ├─ server/
-│  ├─ index.ts              Entry point: loads .env, builds the container, starts Express
+│  ├─ index.ts              Legacy entry point (imports ../server.ts)
 │  ├─ app.ts                REST API, webhook, demo controls, /pay-test page
 │  ├─ container.ts          Wires store + AI provider + gateways + engine from env
 │  ├─ views.ts              Response shapes: case summary/detail, outcome metrics
