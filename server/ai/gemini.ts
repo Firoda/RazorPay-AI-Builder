@@ -25,7 +25,8 @@ export interface GeminiOptions {
   thinkingLevel?: "minimal" | "low" | "medium" | "high";
 }
 
-export const DEFAULT_MODELS = ["gemini-3.8-flash", "gemini-3.7-flash", "gemini-3.6-flash", "gemini-3.5-flash"];
+// Pinned to one model by the owner's cost decision; set GEMINI_MODELS to a comma list to enable a fallback chain.
+export const DEFAULT_MODELS = ["gemini-3.8-flash"];
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 

@@ -33,7 +33,7 @@ export function buildAi(env: NodeJS.ProcessEnv = process.env): { ai: AiProvider;
     models,
     minIntervalMs: Number(env.GEMINI_MIN_INTERVAL_MS ?? 4000),
     timeoutMs: Number(env.GEMINI_TIMEOUT_MS ?? 120_000),
-    thinkingLevel: (env.GEMINI_THINKING || undefined) as "minimal" | "low" | "medium" | "high" | undefined,
+    thinkingLevel: (env.GEMINI_THINKING || "low") as "minimal" | "low" | "medium" | "high" | undefined,
   });
   const ai = env.AI_CACHE === "off" ? gemini : new CachedProvider(gemini, cacheFile, "read-write");
   return { ai, mode: "gemini", model };
