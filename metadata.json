@@ -1,0 +1,7 @@
+{
+  "name": "SeatSaver",
+  "description": "SeatSaver: rescue the sale when a payment is confirmed after the seat is gone. Razorpay x ISB Build Challenge prototype.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -13,5 +13,5 @@
     "noUncheckedIndexedAccess": false,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["server", "eval", "tests", "scripts"]
+  "include": ["server", "eval", "tests", "scripts", "server.ts"]
 }

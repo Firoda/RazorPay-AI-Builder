@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "description": "SeatSaver: late-authorised payment booking rescue agent (Razorpay x ISB Build Challenge prototype)",
   "scripts": {
-    "dev": "tsx watch server/index.ts",
-    "start": "tsx server/index.ts",
+    "dev": "tsx server.ts",
+    "start": "tsx server.ts",
     "typecheck": "tsc --noEmit && tsc --noEmit -p web",
     "eval": "tsx eval/runEval.ts",
     "test": "vitest run",

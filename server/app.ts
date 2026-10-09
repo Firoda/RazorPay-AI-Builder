@@ -170,10 +170,6 @@ export function createApp(container: Container) {
     res.sendFile(join(process.cwd(), "server", "static", "pay-test.html"));
   });
 
-  // Built frontend (npm run build → web/dist). Hash routing, so only "/" needs the SPA shell.
-  const webDist = join(process.cwd(), "web", "dist");
-  if (existsSync(webDist)) app.use(express.static(webDist));
-
   app.use((err: unknown, _req: Request, res: Response, _next: NextFunction) => {
     if (err instanceof EngineError) return res.status(err.status).json({ error: err.message });
     console.error(err);
