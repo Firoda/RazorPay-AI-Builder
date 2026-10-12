@@ -2,16 +2,18 @@ import { useState } from "react";
 import { BRAND } from "../story.config";
 
 /**
- * Razorpay mark. Uses the official logo file if it's placed at story/public/brand/razorpay.svg;
- * otherwise a plain text wordmark (we don't redraw Razorpay's logo).
+ * Official Razorpay logo (vector taken from razorpay.com). `light` = white wordmark for dark surfaces,
+ * `dark` = the original navy wordmark for light surfaces. The blue glyph is never recoloured.
  */
 export function RazorpayMark({ className = "", tone = "light" }: { className?: string; tone?: "light" | "dark" }) {
   const [failed, setFailed] = useState(false);
   if (!failed) {
     return (
       <img
-        className={`rzp-logo ${tone === "light" ? "rzp-logo-light" : ""} ${className}`}
-        src="/brand/razorpay.svg"
+        className={`rzp-logo rzp-logo-${tone} ${className}`}
+        src={tone === "light" ? "/brand/razorpay-light.svg" : "/brand/razorpay.svg"}
+        width={140}
+        height={30}
         alt="Razorpay"
         onError={() => setFailed(true)}
       />

@@ -18,7 +18,7 @@ export function Scene01() {
   useScene(ref, {
     id: "s01",
     scrub: (tl, q) => {
-      tl.fromTo(q(".s01-img"), { scale: 1 }, { scale: 1.15, duration: 1 }, 0);
+      tl.fromTo(q(".s01-img"), { scale: 1, transformOrigin: "70% 42%" }, { scale: 1.15, duration: 1 }, 0);
       tl.to(q(".s01-copy"), { autoAlpha: 0, y: -24, duration: 0.25 }, 0.72);
     },
   });
@@ -75,7 +75,7 @@ export function Scene02() {
   return (
     <section ref={ref} className="scene s02" id="s02">
       <div className="fill overflow-hidden">
-        <Picture id="P1-02" alt="Clay spinning on a pottery wheel" className="s02-img fill" />
+        <Picture id="P1-02" alt="Hands shaping a clay bowl on a spinning pottery wheel" className="s02-img fill" />
         <div className="scrim scrim-bottom" />
       </div>
       <div className="s02-card-wrap">

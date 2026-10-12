@@ -35,6 +35,21 @@ const DEFAULT_MOOD: Record<string, keyof typeof MOOD> = {
   "P1-07": "night", "P1-08": "morning", "P1-08b": "morning", "P1-09": "morning", "P1-10": "studio",
 };
 
+/** Focal point per image so subjects stay in frame when object-fit crops on different screens. */
+const FOCUS: Record<string, string> = {
+  "P1-01": "72% 40%", // Priya sits in the right third
+  "P1-02": "40% 50%",
+  "P1-03": "28% 40%", // Ritu at the counter, left
+  "P1-04": "50% 45%",
+  "P1-05": "50% 35%",
+  "P1-06": "40% 30%",
+  "P1-07": "62% 60%", // the phone on the counter
+  "P1-08": "24% 35%", // Ritu at the door, left
+  "P1-08b": "24% 35%",
+  "P1-09": "50% 40%",
+  "P1-10": "50% 30%",
+};
+
 export function Picture({ id, alt, className, sizes = "100vw", mood, priority = false }: {
   id: string;
   alt: string;
@@ -70,6 +85,7 @@ export function Picture({ id, alt, className, sizes = "100vw", mood, priority = 
         loading={priority ? "eager" : "lazy"}
         decoding="async"
         fetchPriority={priority ? "high" : "auto"}
+        style={{ objectPosition: FOCUS[id] ?? "50% 50%" }}
         onLoad={refreshSoon}
       />
     </picture>

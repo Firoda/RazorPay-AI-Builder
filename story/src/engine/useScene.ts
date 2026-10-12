@@ -64,7 +64,7 @@ export function useScene(ref: RefObject<HTMLElement | null>, spec: SceneSpec): v
                 b.tl.pause(0);
               }
             }
-            if (clocks.length) {
+            if (clocks.length && self.isActive) {
               const current = clocks.filter((c) => p >= c.at).pop();
               setStory({ clock: current?.clock ?? cfg.clock ?? "" });
             }

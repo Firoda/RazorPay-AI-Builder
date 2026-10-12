@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { BatteryFull, Lock, LockOpen, Signal, Wifi, X } from "lucide-react";
+import { Picture } from "../ui/Picture";
 
 // Device mockups are HTML/CSS (not images) so dings, shakes and typing stay crisp and animatable.
 // All brands are generic: no Razorpay, WhatsApp or bank marks.
@@ -106,7 +107,7 @@ export function ClassCard({ title, when, who, left }: { title: string; when: str
     <div className="class-card">
       <div className="class-title">{title}</div>
       <div className="class-when num">{when}</div>
-      <div className="class-who"><span className="class-avatar">A</span>{who}</div>
+      <div className="class-who"><span className="class-avatar"><Picture id="P1-10" alt="Arjun, the instructor" sizes="64px" /></span>{who}</div>
       <SeatRow className="class-seats" />
       <div className="class-left">{left}</div>
     </div>

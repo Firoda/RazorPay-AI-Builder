@@ -9,3 +9,6 @@ coverage/
 .idea/
 eval/results/*.json
 story/dist/
+
+# Original OpenAI images (~25 MB); the site ships the optimised copies in story/public/img
+OpenAI_images/*.png
