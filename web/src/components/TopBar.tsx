@@ -65,7 +65,7 @@ export function TopBar({ route, liveOpen, onToggleLive }: { route: string; liveO
         >
           Rescue queue
         </a>
-        <a href="#/policy" className={route === "policy" ? "active" : ""}>Rules</a>
+        <a href="#/policy" className={route === "policy" ? "active" : ""}>Guardrails</a>
         {tour.status === "closed" || tour.status === "done" ? (
           <a href="#/welcome" onClick={(e) => { e.preventDefault(); tour.restart(); }}>Guided tour</a>
         ) : null}

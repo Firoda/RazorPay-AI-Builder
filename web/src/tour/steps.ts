@@ -9,7 +9,11 @@ export interface TourStep {
   id: string;
   persona: Persona;
   /** Page the step lives on; the engine navigates there if needed (except for click steps). */
-  route?: "queue" | "case";
+  route?: "queue" | "case" | "policy";
+  /** The chapter the step belongs to (drives the mission bar). */
+  chapter?: "rescue" | "guardrails";
+  /** Shows the "You rescued ₹2,000" card instead of a spotlight; its button continues the tour. */
+  celebrate?: boolean;
   target: string;
   title: string;
   body: string;
@@ -23,6 +27,8 @@ export interface TourStep {
   /** A character acts when the viewer presses the button. */
   action?: "approve" | "book";
   nextText?: string;
+  /** Where the popover sits relative to the spotlight (default: below). */
+  side?: "top" | "bottom" | "left" | "right";
 }
 
 export const STEPS: TourStep[] = [
@@ -86,6 +92,35 @@ export const STEPS: TourStep[] = [
     title: "Proof it happened once",
     body: "Each money action can only happen once, so a double click or a repeated alert can never charge twice.",
     fx: "stamps",
+  },
+  { id: "done", persona: "ritu", target: "", title: "", body: "", celebrate: true },
+  {
+    id: "g-traces", persona: "ritu", chapter: "guardrails", route: "policy", target: '[data-tour="g-traces"]',
+    title: "Every outcome comes from a guardrail",
+    body: "Priya was rescued because of these rules. The same rules release, refund or escalate when that's the right call, and the AI can't skip them.",
+  },
+  {
+    id: "g-locks", persona: "ritu", chapter: "guardrails", route: "policy", target: '[data-tour="g-locks"]',
+    title: "Hard guardrails, locked in code",
+    body: "These live in code, not in the AI's prompt, so no clever message can talk them away.",
+    advance: { event: "g:lock", hint: "Try to switch one off" },
+  },
+  {
+    id: "g-dial", persona: "ritu", chapter: "guardrails", route: "policy", target: '[data-tour="g-dial"]',
+    title: "Ritu decides how much the AI does alone",
+    body: "Review-first by default. She can let offers auto-send for patterns she trusts. Capturing the money still waits for the customer's yes, always.",
+  },
+  {
+    id: "g-plugs", persona: "ritu", chapter: "guardrails", route: "policy", target: '[data-tour="g-plugs"]',
+    title: "Razorpay owns the money, not the seats",
+    body: "SeatSaver needs three calls to wherever the seats already live. No booking system at all? Ritu's approval is the seat check.",
+  },
+  {
+    id: "g-close", persona: "ritu", chapter: "guardrails", route: "policy", target: '[data-tour="g-close"]',
+    title: "That's SeatSaver",
+    body: "The AI suggests. The guardrails decide. Ritu stays in charge. Watch the guardrails hold it back in three live cases, or explore on your own.",
+    nextText: "Finish ✓",
+    side: "top",
   },
 ];
 

@@ -20,7 +20,6 @@ interface TourState {
   step: number;
   caseId?: string;
   paymentSource?: "razorpay_test" | "simulated";
-  celebrated?: boolean;
 }
 
 interface TourApi extends TourState {
@@ -114,11 +113,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
     if (state.status === "done") {
       destroyDriver();
       removeAll();
-      if (state.celebrated) return; // the done card shows once, not on every reload or route change
-      setState((s) => ({ ...s, celebrated: true }));
-      setDoneOpen(true);
-      play("success");
-      confetti();
+      setDoneOpen(false);
       return;
     }
     if (state.status !== "running" || !state.caseId) return;
@@ -128,6 +123,16 @@ export function TourProvider({ children }: { children: ReactNode }) {
     if (!step) return;
     const caseId = state.caseId;
     let offEvent: (() => void) | null = null;
+
+    if (step.celebrate) {
+      destroyDriver();
+      removeAll();
+      setDoneOpen(true);
+      play("success");
+      confetti();
+      return;
+    }
+    setDoneOpen(false);
 
     const fetchCase = async (): Promise<CaseDetail | null> => {
       try {
@@ -159,7 +164,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
 
     const lens = () =>
       lensOn()
-        ? notesFor(2, step.id === "ledger" ? "audit" : step.id === "timeline" ? "needs" : step.id)
+        ? notesFor(2, step.id === "ledger" ? "audit" : step.id === "timeline" ? "needs" : step.id === "g-locks" ? "policy" : step.id)
             .map((n) => `<div class="ss-lens"><b>${n.label}</b> ${n.text}</div>`)
             .join("")
         : "";
@@ -174,8 +179,8 @@ export function TourProvider({ children }: { children: ReactNode }) {
           disableButtons: opts.disableNext ? ["next"] : [],
           nextBtnText: opts.nextText ?? "Next →",
           prevBtnText: "← Back",
-          side: "bottom",
-          align: "start",
+          side: step.side ?? "bottom",
+          align: step.side === "top" ? "center" : "start",
           onNextClick: () => opts.onNext?.(),
           onPrevClick: () => goto(Math.max(0, state.step - 1)),
           onCloseClick: () => close(),
@@ -188,6 +193,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
       const r = hashRoute();
       if (step.route === "case" && !r.startsWith(`case/${caseId}`)) navigate(`/case/${caseId}`);
       if (step.route === "queue" && !r.startsWith("queue")) navigate("/queue");
+      if (step.route === "policy" && !r.startsWith("policy")) navigate("/policy");
 
       const el = await waitForElement(step.target, alive);
       if (!alive()) return;
@@ -259,7 +265,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      show(el, { buttons: ["previous", "next", "close"], onNext: () => goto(state.step + 1) });
+      show(el, { buttons: ["previous", "next", "close"], nextText: step.nextText, onNext: () => goto(state.step + 1) });
       if (step.fx === "words") await flyWordsToChips();
       if (step.fx === "race") {
         const d = await fetchCase();
@@ -281,26 +287,35 @@ export function TourProvider({ children }: { children: ReactNode }) {
       {state.status === "closed" && (
         <button className="resume-pill" onClick={() => api_.resume()}>▶ Resume tour</button>
       )}
-      {doneOpen && <DoneCard onClose={() => setDoneOpen(false)} />}
+      {doneOpen && (
+        <DoneCard
+          onNext={() => { setDoneOpen(false); goto(state.step + 1); }}
+          onClose={() => { setDoneOpen(false); close(); }}
+        />
+      )}
     </Ctx.Provider>
   );
 }
 
 function MissionBar({ step }: { step: number }) {
   const s = STEPS[step];
-  if (!s) return null;
+  if (!s || s.celebrate) return null;
   const priya = s.persona === "priya";
+  const guard = s.chapter === "guardrails";
+  // Each chapter counts its own steps, so the rescue still reads "of 9".
+  const chapter = STEPS.filter((x) => !x.celebrate && (x.chapter === "guardrails") === guard);
+  const n = chapter.indexOf(s) + 1;
   return (
-    <div className="mission-bar" role="status" aria-live="polite">
-      <Avatar who={priya ? "priya" : "ritu"} size={26} ring />
-      <span className="mission-text">{priya ? "Now watch Priya's phone" : <>You are <b>Ritu</b>, the studio owner</>}</span>
-      <span className="mission-step num">Step {step + 1} of {STEPS.length}</span>
-      <span className="mission-progress"><span style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} /></span>
+    <div className={`mission-bar ${guard ? "guard" : ""}`} role="status" aria-live="polite">
+      {guard ? <span className="mission-shield" aria-hidden>🛡</span> : <Avatar who={priya ? "priya" : "ritu"} size={26} ring />}
+      <span className="mission-text">{guard ? <><b>Guardrails</b>: what the AI can't do</> : priya ? "Now watch Priya's phone" : <>You are <b>Ritu</b>, the studio owner</>}</span>
+      <span className="mission-step num">Step {n} of {chapter.length}</span>
+      <span className="mission-progress"><span style={{ width: `${(n / chapter.length) * 100}%` }} /></span>
     </div>
   );
 }
 
-function DoneCard({ onClose }: { onClose: () => void }) {
+function DoneCard({ onNext, onClose }: { onNext: () => void; onClose: () => void }) {
   return (
     <div className="done-backdrop" role="dialog" aria-modal="true" aria-label="You rescued ₹2,000">
       <div className="done-card">
@@ -314,7 +329,7 @@ function DoneCard({ onClose }: { onClose: () => void }) {
             <div><b className="num">0</b><span>support tickets</span></div>
           </div>
           <div className="actions" style={{ justifyContent: "center" }}>
-            <button className="btn primary" onClick={() => { onClose(); navigate("/not-act"); }}>See when SeatSaver chooses NOT to act →</button>
+            <button className="btn primary" onClick={onNext}>See the guardrails on our AI →</button>
             <button className="btn" onClick={onClose}>Explore on your own</button>
           </div>
         </div>

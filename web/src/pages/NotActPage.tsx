@@ -93,7 +93,7 @@ export function NotActPage() {
                   <Icon size={34} className="notact-icon" />
                   <h3 className="notact-result">{c.result}</h3>
                   {res && <p className="muted small">{reasonText(res.reason)}</p>}
-                  <span className="rule-chip"><Lock size={12} /> Rule that fired: {c.rule}</span>
+                  <span className="rule-chip"><Lock size={12} /> Guardrail that fired: {c.rule}</span>
                   {res && <a className="small" href={`#/case/${res.id}`}>Open the case →</a>}
                 </div>
               </div>
@@ -102,14 +102,14 @@ export function NotActPage() {
         })}
       </div>
       {!allDone && (
-        <a className="small notact-skip" href="#/policy">Skip ahead: the rules behind every decision →</a>
+        <a className="small notact-skip" href="#/policy">← Back to the guardrails</a>
       )}
       {allDone && (
         <div className="card card-pad notact-close">
           <h2>That's SeatSaver: rescue when it's right, step back when it's not.</h2>
           <p className="muted" style={{ margin: "4px 0 0" }}>Every one of these outcomes came from a rule Ritu controls.</p>
           <div className="actions" style={{ justifyContent: "center", marginTop: 12 }}>
-            <a className="btn primary breathe" href="#/policy">See the rules behind every decision →</a>
+            <a className="btn primary" href="#/policy">Back to the guardrails</a>
             <a className="btn" href="#/queue">Explore on your own</a>
           </div>
         </div>
