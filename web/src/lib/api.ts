@@ -42,7 +42,18 @@ export type MerchantAction =
   | { type: "release" }
   | { type: "retry" };
 
+export interface SessionStart {
+  sessionId: string;
+  caseId: string;
+  payment: { source: "razorpay_test" | "simulated"; id?: string };
+}
+
 export const api = {
+  session: {
+    start: () => request<SessionStart>("POST", "/api/session/start"),
+    scenario: (id: string) => request<{ caseId: string; eventId: string }>("POST", "/api/session/scenario", { id }),
+    reset: () => request<{ ok: boolean }>("POST", "/api/session/reset"),
+  },
   health: () => request<Health>("GET", "/api/health"),
   studio: () => request<Studio>("GET", "/api/studio"),
   metrics: () => request<Metrics>("GET", "/api/metrics"),

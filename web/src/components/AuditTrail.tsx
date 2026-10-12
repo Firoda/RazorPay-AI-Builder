@@ -19,7 +19,7 @@ export function AuditTrail({ d }: { d: CaseDetail }) {
   const [open, setOpen] = useState<string | null>(null);
   return (
     <div className="stack">
-      <section className="card">
+      <section className="card" data-tour="ledger">
         <div className="card-head"><h3>Money and seat actions (idempotency ledger)</h3></div>
         <div className="card-body">
           {d.ledger.length === 0 ? <span className="muted small">No reservation or capture attempted.</span> : (
@@ -27,7 +27,7 @@ export function AuditTrail({ d }: { d: CaseDetail }) {
               <thead><tr><th>Key</th><th>Status</th><th>When</th><th>Detail</th></tr></thead>
               <tbody>
                 {d.ledger.map((l) => (
-                  <tr key={l.key}>
+                  <tr key={l.key} data-ledger-row>
                     <td className="num">{l.key}</td>
                     <td><span className={`tag ${l.status === "succeeded" ? "success" : l.status === "failed" ? "danger" : "neutral"}`}>{l.status}</span></td>
                     <td className="num">{formatIST(l.at)}</td>

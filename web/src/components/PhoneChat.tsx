@@ -53,7 +53,7 @@ export function PhoneChat({ d, run, busy, full = false }: { d: CaseDetail; run: 
       : [];
 
   return (
-    <div className={`phone ${full ? "full" : ""}`} aria-label={`${name}'s phone (simulated WhatsApp)`}>
+    <div className={`phone ${full ? "full" : ""}`} data-tour="phone" aria-label={`${name}'s phone (simulated WhatsApp)`}>
       <div className="phone-header">
         <div className="phone-avatar" aria-hidden>C</div>
         <div>
@@ -78,7 +78,7 @@ export function PhoneChat({ d, run, busy, full = false }: { d: CaseDetail; run: 
         {offerOpen && d.offered.length > 0 && (
           <div className="chat-offer" role="group" aria-label="Offer options">
             {d.offered.map((s) => (
-              <button key={s.id} disabled={busy} onClick={() => choose("accept", s.id)}>
+              <button key={s.id} data-offer-session={s.id} disabled={busy} onClick={() => choose("accept", s.id)}>
                 Book {s.label.split(" · ")[0]}
               </button>
             ))}

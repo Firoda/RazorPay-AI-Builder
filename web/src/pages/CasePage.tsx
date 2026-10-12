@@ -9,12 +9,16 @@ import { api } from "../lib/api";
 import { useAction, usePolling } from "../lib/hooks";
 import { reasonText } from "../lib/labels";
 import type { CaseDetail } from "../lib/types";
+import { bus } from "../tour/bus";
+import { useEffect } from "react";
 
 type MobileTab = "decision" | "customer" | "timeline" | "audit";
 
 export function useCaseController(id: string) {
   const action = useAction();
   const { data, error, set } = usePolling(() => api.case(id), [id], 2500, Boolean(action.busy));
+  // The guided tour acts through the API; it pushes fresh case data here so the screen updates instantly.
+  useEffect(() => bus.on("case:update", (d) => { if ((d as CaseDetail)?.id === id) set(d as CaseDetail); }), [id, set]);
   const run = async (label: string, fn: () => Promise<CaseDetail>) => {
     const res = await action.run(label, fn);
     if (res) set(res);
@@ -50,7 +54,6 @@ export function CasePage({ id }: { id: string }) {
             <span>·</span>
             <span>{d.moneyMode === "capture" ? "Payment held: capture or release" : "Payment already captured: rebook only"}</span>
             {real ? <Tag kind="test">Real Razorpay test payment</Tag> : <Tag kind="sim">synthetic scenario</Tag>}
-            <span className="num">· {d.id}</span>
           </div>
         </div>
       </div>
@@ -77,7 +80,7 @@ export function CasePage({ id }: { id: string }) {
         <div className={`col-main stack ${mTab === "decision" || mTab === "audit" ? "show-mobile" : ""}`}>
           <div className="tabs desktop-tabs" role="tablist" aria-label="Decision or audit">
             <button role="tab" aria-selected={tab === "decision"} className={tab === "decision" ? "active" : ""} onClick={() => { setTab("decision"); setMTab("decision"); }}>Decision</button>
-            <button role="tab" aria-selected={tab === "audit"} className={tab === "audit" ? "active" : ""} onClick={() => { setTab("audit"); setMTab("audit"); }}>Audit trail</button>
+            <button role="tab" data-tour="audit-tab" aria-selected={tab === "audit"} className={tab === "audit" ? "active" : ""} onClick={() => { setTab("audit"); setMTab("audit"); bus.emit("nav:audit"); }}>Audit trail</button>
           </div>
           {tab === "audit" ? (
             <AuditTrail d={d} />

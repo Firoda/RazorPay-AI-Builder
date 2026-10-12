@@ -5,7 +5,7 @@ import { Tag } from "./ui";
 export function Timeline({ d }: { d: CaseDetail }) {
   const items = buildTimeline(d);
   return (
-    <section className="card">
+    <section className="card" data-tour="timeline">
       <div className="card-head"><h3>Timeline</h3></div>
       <div className="card-body">
         <ol className="timeline">

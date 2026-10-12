@@ -2,11 +2,17 @@ import { LANGUAGE_LABEL, constraintText, rupees, sessionReason } from "../lib/la
 import type { CaseDetail, Constraint } from "../lib/types";
 import { Tag } from "./ui";
 
+/** The word to find in the customer's own message when animating it into this chip. */
+function chipWord(c: Constraint): string {
+  if (c.type === "instructor") return c.value;
+  return c.value.split("|")[0].trim();
+}
+
 export function ConstraintChips({ d }: { d: CaseDetail }) {
   const intent = d.case.intent;
   if (!intent) {
     return (
-      <section className="card">
+      <section className="card" data-tour="needs">
         <div className="card-head"><h3>What the customer needs</h3></div>
         <div className="card-body muted">
           {d.messages.some((m) => m.direction === "inbound")
@@ -17,7 +23,7 @@ export function ConstraintChips({ d }: { d: CaseDetail }) {
     );
   }
   const chip = (c: Constraint, hard: boolean, i: number) => (
-    <div key={`${hard}-${i}`} className={`chip ${hard ? "hard" : ""}`}>
+    <div key={`${hard}-${i}`} className={`chip ${hard ? "hard" : ""}`} data-chip-word={chipWord(c)}>
       <span className="chip-top">
         <span aria-label={hard ? "Must have" : "Preference"}>{hard ? "🔒" : "♡"}</span>
         {constraintText(c)}
@@ -27,7 +33,7 @@ export function ConstraintChips({ d }: { d: CaseDetail }) {
   );
   const wantsLabel = { alternative: "Wants another session", refund: "Wants a refund", original_only: "Only the original slot", unclear: "Unclear" }[intent.wants];
   return (
-    <section className="card">
+    <section className="card" data-tour="needs">
       <div className="card-head">
         <h3>What the customer needs</h3>
         <Tag kind="ai">read by AI</Tag>
@@ -85,7 +91,7 @@ function colFor(reason: string): Col | null {
 export function SessionsMatrix({ d }: { d: CaseDetail }) {
   if (!d.candidates.length) {
     return (
-      <section className="card">
+      <section className="card" data-tour="matrix">
         <div className="card-head"><h3>Sessions checked</h3></div>
         <div className="card-body muted small">No alternatives evaluated for this case.</div>
       </section>
@@ -118,7 +124,7 @@ export function SessionsMatrix({ d }: { d: CaseDetail }) {
   };
 
   return (
-    <section className="card">
+    <section className="card" data-tour="matrix">
       <div className="card-head">
         <h3>Sessions checked</h3>
         <span className="muted small">filtered by code · ranked by AI</span>
@@ -136,7 +142,7 @@ export function SessionsMatrix({ d }: { d: CaseDetail }) {
               const isRule = d.ruleBaselineSessionId === sessionId;
               const [dayPart, timePart] = s.label.split(", ");
               return (
-                <tr key={sessionId} className={isOffered ? "offered" : feasible ? "" : "infeasible"}>
+                <tr key={sessionId} data-row-session={sessionId} className={isOffered ? "offered" : feasible ? "" : "infeasible"}>
                   <td>
                     <div style={{ fontWeight: 600 }} className="num">{s.label.split(" · ")[0]}</div>
                     <div className="muted small">{s.label.split(" · ")[1]}</div>

@@ -5,6 +5,8 @@ import { api } from "../lib/api";
 import { navigate, useAction, usePolling } from "../lib/hooks";
 import { reasonText } from "../lib/labels";
 import { TERMINAL, type CaseState, type CaseSummary } from "../lib/types";
+import { bus } from "../tour/bus";
+import { useTour } from "../tour/Tour";
 
 const NEEDS_ACTION: CaseState[] = ["MERCHANT_REVIEW", "RESTORE_PROPOSED", "ESCALATED", "PENDING_RESOLUTION"];
 const WAITING: CaseState[] = ["AWAITING_CUSTOMER", "OFFER_SENT", "EXECUTING", "DETECTED"];
@@ -23,6 +25,7 @@ export function QueuePage() {
   const { data: metrics } = usePolling(() => api.metrics(), []);
   const [filter, setFilter] = useState<Filter>("all");
   const load = useAction();
+  const tour = useTour();
 
   const list = (cases ?? [])
     .filter((c) => filter === "all" || (filter === "action" ? NEEDS_ACTION : filter === "waiting" ? WAITING : TERMINAL).includes(c.state))
@@ -65,7 +68,7 @@ export function QueuePage() {
         </Empty>
       ) : (
         <div className="case-list">
-          {list.map((c) => <CaseCard key={c.id} c={c} />)}
+          {list.map((c, i) => <CaseCard key={c.id} c={c} spot={tour.caseId ? c.id === tour.caseId : i === 0} />)}
           {cases && list.length === 0 && <div className="muted">Nothing in this filter.</div>}
         </div>
       )}
@@ -79,9 +82,9 @@ function urgency(c: CaseSummary): number {
   return 2;
 }
 
-function CaseCard({ c }: { c: CaseSummary }) {
+function CaseCard({ c, spot }: { c: CaseSummary; spot: boolean }) {
   return (
-    <a className="card case-card" href={`#/case/${c.id}`}>
+    <a className="card case-card" href={`#/case/${c.id}`} data-tour={spot ? "case-card" : undefined} onClick={() => spot && bus.emit("nav:case", c.id)}>
       <div className="stack-sm" style={{ gap: 2 }}>
         <div className="row wrap">
           <span className="who">{c.customerName}</span>

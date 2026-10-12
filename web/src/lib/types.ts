@@ -135,6 +135,7 @@ export interface Health {
   model: string;
   razorpayTest: boolean;
   now: string;
+  session?: boolean;
 }
 
 export interface Policy {

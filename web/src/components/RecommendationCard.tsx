@@ -50,13 +50,13 @@ export function RecommendationCard({ d, run, busy }: { d: CaseDetail; run: Run; 
           {c.offerMessage && (
             <div className="stack-sm">
               <span className="section-title">Message the customer will get</span>
-              <div className="msg-preview">{c.offerMessage}</div>
+              <div className="msg-preview" data-tour="offer-preview">{c.offerMessage}</div>
               <span className="muted small">Amounts and dates are filled in by code, never written by the AI.</span>
             </div>
           )}
           {d.reason === "unverified_constraints" && <Banner tone="warning">{reasonText(d.reason)}</Banner>}
           <div className="actions">
-            <button className="btn primary" disabled={busy} onClick={() => act("Sending the offer…", { type: "approve" })}>
+            <button className="btn primary" data-tour="approve-btn" disabled={busy} onClick={() => act("Sending the offer…", { type: "approve" })}>
               Approve &amp; send
             </button>
             <button className="btn" disabled={busy} onClick={() => setEditing(true)}>Edit</button>
@@ -179,7 +179,7 @@ export function RecommendationCard({ d, run, busy }: { d: CaseDetail; run: Run; 
   }
 
   return (
-    <section className="card rec-card" aria-label="Decision">
+    <section className="card rec-card" aria-label="Decision" data-tour="decision">
       <div className="card-body">{body}</div>
       {editing && <EditOfferModal d={d} onClose={() => setEditing(false)} onSubmit={async (sessionIds, message) => {
         setEditing(false);
