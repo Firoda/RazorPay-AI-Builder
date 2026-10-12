@@ -22,13 +22,16 @@ const storyDist = join(process.cwd(), "story", "dist");
 const webDist = join(process.cwd(), "web", "dist");
 const isBackendPath = (p: string) => p.startsWith("/api") || p.startsWith("/webhooks") || p.startsWith("/pay-test");
 
-app.get("/app", (_req, res) => res.redirect(301, "/app/"));
+// "/app" → "/app/" (Express also matches "/app/" on a "/app" route, so check the raw URL).
+app.use((req: Request, res: Response, next: NextFunction) =>
+  req.originalUrl === "/app" || req.originalUrl.startsWith("/app?") ? res.redirect(301, req.originalUrl.replace("/app", "/app/")) : next(),
+);
 
 if (process.env.NODE_ENV !== "production") {
   const { createServer: createViteServer } = await import("vite");
   const viteOpts = (configFile: string) => ({
     configFile,
-    server: { middlewareMode: true, host: "0.0.0.0", hmr: false },
+    server: { middlewareMode: true, host: "0.0.0.0", hmr: false, ws: false as const },
     appType: "spa" as const,
   });
   const webVite = await createViteServer(viteOpts("web/vite.config.ts"));
