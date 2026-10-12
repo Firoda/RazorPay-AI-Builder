@@ -24,3 +24,6 @@ export interface AiProvider {
 }
 
 export class AiUnavailableError extends Error {}
+
+/** Thrown when a visitor's sandbox has used its AI-call allowance (cost guard for the public demo). */
+export class AiLimitError extends AiUnavailableError {}

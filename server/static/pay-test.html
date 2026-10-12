@@ -32,7 +32,13 @@
 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 <script>
   const out = document.getElementById("out");
-  const admin = new URLSearchParams(location.search).get("admin");
+  const params = new URLSearchParams(location.search);
+  const admin = params.get("admin");
+  const poolMode = params.get("pool") === "1";
+  if (poolMode) {
+    document.querySelector("h2").textContent = "Stock the demo payment pool";
+    document.querySelector(".muted").innerHTML = "Operator tool. Each payment you make here is held as <b>authorized</b> for 5 days and added to the pool. Every visitor's guided tour then captures one real test payment. Repeat as many times as you want visitors (≈30 for judging).";
+  }
   const headers = { "content-type": "application/json", ...(admin ? { "x-admin-token": admin } : {}) };
   const log = (msg) => { out.textContent = typeof msg === "string" ? msg : JSON.stringify(msg, null, 2); };
 
@@ -40,7 +46,7 @@
     e.target.disabled = true;
     try {
       const scenarioId = document.getElementById("scenario").value;
-      const r = await fetch("/api/demo/real-order", { method: "POST", headers, body: JSON.stringify({ scenarioId }) });
+      const r = await fetch("/api/demo/real-order", { method: "POST", headers, body: JSON.stringify({ scenarioId, pool: poolMode }) });
       const order = await r.json();
       if (!r.ok) throw new Error(order.error);
       log({ step: "order created (manual capture)", ...order });
@@ -57,7 +63,7 @@
           log({ step: "checkout success, verifying…", payment: resp.razorpay_payment_id });
           const v = await fetch("/api/demo/real-payment", { method: "POST", headers, body: JSON.stringify(resp) });
           const body = await v.json();
-          log(v.ok ? { step: "payment verified and handed to SeatSaver", ...body, view: `/api/cases/${body.caseId}` } : { error: body.error });
+          log(!v.ok ? { error: body.error } : body.pooled ? { step: "added to the pool ✓", ...body, next: "Click Pay again to add another" } : { step: "payment verified and handed to SeatSaver", ...body, view: `/api/cases/${body.caseId}` });
           e.target.disabled = false;
         },
         modal: { ondismiss: () => { log("Checkout closed without paying."); e.target.disabled = false; } },

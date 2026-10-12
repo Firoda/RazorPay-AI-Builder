@@ -5,16 +5,26 @@ import { CachedProvider } from "./ai/cache";
 import { FakeProvider } from "./ai/fake";
 import { DEFAULT_MODELS, GeminiProvider } from "./ai/gemini";
 import type { AiProvider } from "./ai/provider";
+import { LimitedProvider } from "./ai/limited";
 import { CaseEngine } from "./engine/caseEngine";
+import { PaymentPool } from "./paymentPool";
 import { RealPaymentFlow } from "./realPayment";
+import { SessionRegistry } from "./sessions";
 import { Store } from "./store/memoryStore";
 
-export interface Container {
+/** One isolated demo world: its own store, engine and real-payment flow. */
+export interface Sandbox {
   store: Store;
   engine: CaseEngine;
-  ai: AiProvider;
   realPayments: RealPaymentFlow;
-  config: { aiMode: string; model: string; razorpayTest: boolean; webhookSecret: string; adminToken: string };
+}
+
+export interface Container extends Sandbox {
+  ai: AiProvider;
+  /** Per-visitor sandboxes (judges trying the demo at once never collide). */
+  sessions: SessionRegistry<Sandbox>;
+  pool: PaymentPool;
+  config: { aiMode: string; model: string; razorpayTest: boolean; webhookSecret: string; adminToken: string; aiCallsPerSession: number };
 }
 
 export function buildAi(env: NodeJS.ProcessEnv = process.env): { ai: AiProvider; mode: string; model: string } {
@@ -40,24 +50,35 @@ export function buildAi(env: NodeJS.ProcessEnv = process.env): { ai: AiProvider;
 }
 
 export function buildContainer(env: NodeJS.ProcessEnv = process.env, aiOverride?: AiProvider): Container {
-  const store = new Store();
   const built = aiOverride ? { ai: aiOverride, mode: aiOverride.name, model: aiOverride.name } : buildAi(env);
-  const real = env.RAZORPAY_KEY_ID && env.RAZORPAY_KEY_SECRET
-    ? new RazorpayTestGateway(env.RAZORPAY_KEY_ID, env.RAZORPAY_KEY_SECRET, store)
-    : null;
-  const gateway = new GatewayRouter(new SimulatedGateway(store), real);
-  const engine = new CaseEngine({ store, ai: built.ai, gateway, calendar: new CalendarAdapter(store) });
+  const keyId = env.RAZORPAY_KEY_ID ?? "";
+  const keySecret = env.RAZORPAY_KEY_SECRET ?? "";
+  const hasRazorpay = Boolean(keyId && keySecret);
+  const pool = new PaymentPool(env.PAYMENT_POOL || "");
+  const aiCallsPerSession = Number(env.AI_CALLS_PER_SESSION || 25);
+
+  const makeSandbox = (ai: AiProvider): Sandbox => {
+    const store = new Store();
+    const real = hasRazorpay ? new RazorpayTestGateway(keyId, keySecret, store) : null;
+    const gateway = new GatewayRouter(new SimulatedGateway(store), real);
+    const engine = new CaseEngine({ store, ai, gateway, calendar: new CalendarAdapter(store) });
+    return { store, engine, realPayments: new RealPaymentFlow(store, engine, real, keyId, keySecret, pool) };
+  };
+
+  // The default sandbox serves operator tools, webhooks and requests without a visitor session.
+  const main = makeSandbox(built.ai);
   return {
-    store,
-    engine,
+    ...main,
     ai: built.ai,
-    realPayments: new RealPaymentFlow(store, engine, real, env.RAZORPAY_KEY_ID ?? "", env.RAZORPAY_KEY_SECRET ?? ""),
+    pool,
+    sessions: new SessionRegistry<Sandbox>(() => makeSandbox(new LimitedProvider(built.ai, aiCallsPerSession))),
     config: {
       aiMode: built.mode,
       model: built.model,
-      razorpayTest: Boolean(real),
+      razorpayTest: hasRazorpay,
       webhookSecret: env.RAZORPAY_WEBHOOK_SECRET || "",
       adminToken: env.DEMO_ADMIN_TOKEN || "",
+      aiCallsPerSession,
     },
   };
 }

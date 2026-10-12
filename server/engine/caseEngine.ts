@@ -1,6 +1,6 @@
 import type { CalendarAdapter } from "../adapters/calendar";
 import type { PaymentGateway } from "../adapters/razorpay";
-import { AiUnavailableError, type AiProvider, type AiResult } from "../ai/provider";
+import { AiLimitError, AiUnavailableError, type AiProvider, type AiResult } from "../ai/provider";
 import { WORKSHOP_NAMES, sessionLabelForCustomer, sessionView } from "../domain/labels";
 import { HOUR_MS, dayName, formatInstantIST, formatRupees, istDateOf } from "../domain/time";
 import {
@@ -259,13 +259,14 @@ export class CaseEngine {
   }
 
   private async callAi(c: RescueCase, kind: string, fn: () => Promise<AiResult>): Promise<AiResult | null> {
+    this.s.log("system", "ai.call.started", c.id, { kind });
     try {
       const res = await fn();
       this.s.log("ai", `ai.${kind}`, c.id, { output: res.data, meta: res.meta });
       return res;
     } catch (err) {
       this.s.log("system", `ai.${kind}.failed`, c.id, { error: String(err) });
-      this.escalate(c, err instanceof AiUnavailableError ? "ai_unavailable" : "ai_error");
+      this.escalate(c, err instanceof AiLimitError ? "demo_ai_limit" : err instanceof AiUnavailableError ? "ai_unavailable" : "ai_error");
       return null;
     }
   }

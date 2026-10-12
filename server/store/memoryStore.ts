@@ -88,8 +88,24 @@ export class Store {
     return `${prefix}_${n}`;
   }
 
+  private logListeners = new Set<(entry: AuditEntry) => void>();
+
   log(actor: Actor, action: string, caseId?: string, detail?: unknown): void {
-    this.audit.push({ id: this.nextId("aud"), caseId, at: this.nowIso(), actor, action, detail });
+    const entry: AuditEntry = { id: this.nextId("aud"), caseId, at: this.nowIso(), actor, action, detail };
+    this.audit.push(entry);
+    for (const fn of this.logListeners) {
+      try {
+        fn(entry);
+      } catch {
+        /* a broken listener must never break the engine */
+      }
+    }
+  }
+
+  /** Subscribe to new audit entries (used by the Live AI feed). Returns an unsubscribe function. */
+  onLog(fn: (entry: AuditEntry) => void): () => void {
+    this.logListeners.add(fn);
+    return () => this.logListeners.delete(fn);
   }
 
   seatsLeft(sessionId: string): number {
