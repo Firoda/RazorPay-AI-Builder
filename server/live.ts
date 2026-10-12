@@ -128,6 +128,7 @@ export function liveLine(store: Store, e: AuditEntry): LiveLine | null {
       return { ...base, kind: "check", text: "Duplicate event ignored: nothing changed" };
     case "state.changed": {
       const to = d.to as string;
+      if (to === "OFFER_SENT" && d.reason === "auto_approved_by_policy") return { ...base, kind: "success", text: "Offer sent automatically by your auto-send rule · payment still held, not captured" };
       if (to === "RESCUED") return { ...base, kind: "success", text: `Rescued ✓ · ${name} is booked` };
       if (to === "RELEASED") return { ...base, kind: "info", text: "Released: not captured. The money returns automatically", reason: d.reason as string };
       if (to === "ESCALATED") return { ...base, kind: "warn", text: "Handed to Ritu", reason: d.reason as string };

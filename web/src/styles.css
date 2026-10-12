@@ -485,3 +485,36 @@ table.simple th { font-size: 11px; color: var(--muted); text-transform: uppercas
   .notact-grid { grid-template-columns: 1fr; }
   .mission-bar { top: auto; bottom: 12px; }
 }
+
+/* Final chapter: rules and the trust dial */
+.policy-h { font-size: 18px; margin: 0; }
+.trace-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+.trace { padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.trace-rules { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.rule-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border-radius: 999px; background: var(--primary-soft); color: var(--primary); font-size: 12.5px; font-weight: 600; }
+.flip-back .rule-chip { margin-top: 4px; }
+.notact-skip { align-self: center; color: var(--muted); }
+.lock-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.lock-tile { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; cursor: pointer; text-align: left; transition: border-color 0.2s, box-shadow 0.2s; }
+.lock-tile:hover { border-color: var(--primary); box-shadow: 0 6px 18px rgba(48, 94, 255, 0.12); }
+.lock-ico { width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; background: var(--surface-2); color: var(--text); flex-shrink: 0; }
+.lock-tile.shake { animation: lockshake 0.45s ease; border-color: var(--danger); }
+.lock-tile.shake .lock-ico { background: var(--danger-soft); color: var(--danger); }
+@keyframes lockshake { 0%, 100% { transform: none; } 20% { transform: translateX(-6px) rotate(-1deg); } 40% { transform: translateX(6px) rotate(1deg); } 60% { transform: translateX(-4px); } 80% { transform: translateX(4px); } }
+.dial { display: inline-flex; padding: 4px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--border); gap: 4px; flex-wrap: wrap; }
+.dial button { display: inline-flex; align-items: center; gap: 6px; padding: 9px 16px; border-radius: 999px; border: 0; background: none; color: var(--muted); font: inherit; font-weight: 600; cursor: pointer; transition: background 0.25s, color 0.25s; }
+.dial button.on { background: var(--primary); color: #fff; box-shadow: 0 6px 16px rgba(48, 94, 255, 0.35); }
+.dial button.on .tag { background: rgb(255 255 255 / 20%); color: #fff; }
+.dial-compare { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.dial-row { display: flex; justify-content: space-between; gap: 12px; padding: 11px 14px; border-top: 1px solid var(--border); font-size: 14px; transition: background 0.3s; }
+.dial-row:first-child { border-top: 0; }
+.dial-row.changed { background: var(--primary-soft); }
+.dial-step { font-weight: 600; }
+.dial-same { color: var(--muted); text-align: right; }
+.dial-wait { color: #b45309; font-weight: 700; text-align: right; }
+.dial-auto { color: var(--primary); font-weight: 700; text-align: right; }
+.policy-close { text-align: center; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+@media (max-width: 1100px) {
+  .trace-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .lock-grid { grid-template-columns: 1fr; }
+}

@@ -65,6 +65,7 @@ export function TopBar({ route, liveOpen, onToggleLive }: { route: string; liveO
         >
           Rescue queue
         </a>
+        <a href="#/policy" className={route === "policy" ? "active" : ""}>Rules</a>
         {tour.status === "closed" || tour.status === "done" ? (
           <a href="#/welcome" onClick={(e) => { e.preventDefault(); tour.restart(); }}>Guided tour</a>
         ) : null}
@@ -76,7 +77,6 @@ export function TopBar({ route, liveOpen, onToggleLive }: { route: string; liveO
             <div className="more-menu" role="menu" onClick={() => setMenu(false)}>
               <a role="menuitem" href="#/not-act">When SeatSaver doesn't act</a>
               <a role="menuitem" href="#/demo">Demo controls</a>
-              <a role="menuitem" href="#/policy">Policy &amp; autonomy</a>
               <a role="menuitem" href="#/about">What's real vs simulated</a>
               <a role="menuitem" href="/">← Back to the story</a>
             </div>

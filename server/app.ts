@@ -105,6 +105,11 @@ export function createApp(container: Container) {
     const sc = getScenario(id);
     if (!sc || sc.group === "system" && !["G05", "G02", "G26"].includes(id)) throw new EngineError("Unknown scenario", 404);
     sb.store.reset();
+    // The policy chapter re-runs Priya's case with auto-send on, to show what changes (the send) and what doesn't (capture).
+    if (req.body?.autonomy === "L2") {
+      sb.store.policy.autonomy = "L2";
+      sb.store.policy.autoApprovePatterns = ["day_of_week+instructor+time_window", "instructor", "day_of_week+time_window"];
+    }
     res.json(startScenario(sb, id));
   }));
 

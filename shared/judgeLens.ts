@@ -20,6 +20,7 @@ export const LENS_NOTES: LensNote[] = [
   { portal: 2, anchor: "book", label: "Trust and safety", text: "Seat reserved before money moves. The capture happens once. The AI never writes amounts." },
   { portal: 2, anchor: "audit", label: "Accuracy", text: "Golden set: dev 17/18, new held-out 3/3, simple rule 0%, zero wrong charges." },
   { portal: 2, anchor: "done", label: "Business outcome", text: "North Star: rescued-revenue rate. Guardrails: zero charges without an accepted seat." },
+  { portal: 2, anchor: "policy", label: "Guardrails and control", text: "Hard limits live in code, not in the prompt. Autonomy is opt-in per pattern, and capture always waits for the customer's yes." },
   { portal: 2, anchor: "notact", label: "What we left out", text: "No price differences, no extra seats, no real WhatsApp sending: deliberately out of v1." },
 ];
 

@@ -64,6 +64,16 @@ describe("per-visitor sandboxes", () => {
     await request(app).post("/api/demo/real-order").set("cookie", a.cookie).send({ pool: true }).expect(401); // stocking the pool is operator-only
   });
 
+  it("re-runs Priya's case with auto-send: the offer goes out without Ritu, the money stays held", async () => {
+    const { app } = setup();
+    const a = await startSession(app);
+    const res = await request(app).post("/api/session/scenario").set("cookie", a.cookie).send({ id: "G01", autonomy: "L2" }).expect(200);
+    await settle();
+    const c = await request(app).get(`/api/cases/${res.body.caseId}`).set("cookie", a.cookie).expect(200);
+    expect(c.body.state).toBe("OFFER_SENT");
+    expect(c.body.ledger.filter((l: { key: string }) => l.key.startsWith("capture:"))).toEqual([]); // nothing captured before she accepts
+  });
+
   it("caps AI calls per visitor and escalates honestly when the cap is reached", async () => {
     const { app } = setup({ AI_CALLS_PER_SESSION: "1" });
     const a = await startSession(app);

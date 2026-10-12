@@ -51,7 +51,7 @@ export interface SessionStart {
 export const api = {
   session: {
     start: () => request<SessionStart>("POST", "/api/session/start"),
-    scenario: (id: string) => request<{ caseId: string; eventId: string }>("POST", "/api/session/scenario", { id }),
+    scenario: (id: string, opts?: { autonomy?: "L2" }) => request<{ caseId: string; eventId: string }>("POST", "/api/session/scenario", { id, ...opts }),
     reset: () => request<{ ok: boolean }>("POST", "/api/session/reset"),
   },
   health: () => request<Health>("GET", "/api/health"),
