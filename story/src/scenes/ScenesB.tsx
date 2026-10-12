@@ -2,7 +2,8 @@ import { useRef } from "react";
 import { play } from "../../../shared/sound";
 import { gsap } from "../engine/scroll";
 import { useScene } from "../engine/useScene";
-import { BookingLaptop, ChatHeader, LockNotification, Phone, TypingDots, Vault } from "../mockups/Mockups";
+import { BookingLaptop, ChatHeader, LockNotification, Phone, TypingDots } from "../mockups/Mockups";
+import { RazorpayMark } from "../ui/Brand";
 import { COPY, DEMO_URL } from "../story.config";
 import { LensNotes } from "../ui/Lens";
 import { Picture } from "../ui/Picture";
@@ -185,10 +186,11 @@ export function Scene08() {
   );
 }
 
-/* ── Scene 9 · The clock ──────────────────────────────────────────── */
+/* ── Scene 9 · The clock: how Razorpay handles it today ───────────── */
 export function Scene09() {
   const ref = useRef<HTMLElement>(null);
   const timer = useRef<number | undefined>(undefined);
+  const T = COPY.s09.today;
   useScene(ref, {
     id: "s09",
     onActive: (active) => {
@@ -209,15 +211,20 @@ export function Scene09() {
     },
     beats: [
       {
-        at: 0.06,
+        at: 0.05,
         build: (q) =>
           gsap.timeline()
-            .fromTo(q(".vault"), { autoAlpha: 0, y: -40 }, { autoAlpha: 1, y: 0, duration: 0.5, ease: "back.out(1.4)" })
-            .fromTo(q(".thought"), { autoAlpha: 0, scale: 0.7 }, { autoAlpha: 1, scale: 1, duration: 0.25, stagger: 0.4, ease: "back.out(2)" }, 0.7)
-            .call(() => play("pop"), [], 0.7)
-            .call(() => play("pop"), [], 1.1)
-            .call(() => play("pop"), [], 1.5)
-            .add(lines(q, ".s09-line"), 2.0),
+            .fromTo(q(".today-card"), { autoAlpha: 0, y: 40 }, { autoAlpha: 1, y: 0, duration: 0.55, ease: "power3.out" })
+            .fromTo(q(".today-status"), { autoAlpha: 0, x: -10 }, { autoAlpha: 1, x: 0, duration: 0.35 }, 0.45)
+            .fromTo(q(".today-timer"), { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.35 }, 0.75)
+            .fromTo(q(".today-option"), { autoAlpha: 0, x: -16 }, { autoAlpha: 1, x: 0, duration: 0.35, stagger: 0.5 }, 1.3)
+            .call(() => play("buzzWrong"), [], 1.45)
+            .call(() => play("buzzWrong"), [], 1.95)
+            .fromTo(q(".thought"), { autoAlpha: 0, scale: 0.7 }, { autoAlpha: 1, scale: 1, duration: 0.25, stagger: 0.4, ease: "back.out(2)" }, 2.5)
+            .call(() => play("pop"), [], 2.5)
+            .call(() => play("pop"), [], 2.9)
+            .call(() => play("pop"), [], 3.3)
+            .add(lines(q, ".s09-line"), 3.8),
       },
     ],
   });
@@ -228,10 +235,31 @@ export function Scene09() {
         <div className="scrim scrim-even" />
       </div>
       <div className="s09-stage">
-        <Vault />
-        {COPY.s09.bubbles.map((b, i) => (
-          <span key={b} className={`thought thought-${i}`}>{b}</span>
-        ))}
+        <div className="today-card">
+          <div className="today-head">
+            <RazorpayMark tone="dark" />
+            <span className="today-kicker">{T.kicker}</span>
+          </div>
+          <div className="today-status"><span className="dot-held" />{T.status}<span className="today-amount num">{T.amount}</span></div>
+          <div className="today-timer">
+            <div className="today-timer-label">{T.timerLabel}</div>
+            <div className="today-count num" data-countdown>2d 13h 58m 00s</div>
+          </div>
+          <div className="today-options-title">{T.optionsTitle}</div>
+          {T.options.map((o) => (
+            <div key={o.act} className="today-option">
+              <span className="today-x" aria-hidden>✕</span>
+              <span><strong>{o.act}</strong> · {o.result}</span>
+            </div>
+          ))}
+          <div className="today-note">{T.note}</div>
+        </div>
+        <div className="s09-thoughts">
+          <div className="s09-thoughts-who">Ritu, at 8 AM</div>
+          {COPY.s09.bubbles.map((b, i) => (
+            <span key={b} className={`thought thought-${i}`}>{b}</span>
+          ))}
+        </div>
       </div>
       <div className="copy copy-lower-center">
         <p className="story-h2 s09-line">{COPY.s09.line}</p>

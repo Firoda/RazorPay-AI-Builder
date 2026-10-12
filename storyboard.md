@@ -4,7 +4,7 @@
 
 This document covers story, feel, copy, pacing, motion, sound and images only. Technical implementation lives in a separate file.
 
-Version 1.1 · 12 Oct 2026 (sound gate, skip link, chapter dots, honest payment wording)
+Version 1.2 · 12 Oct 2026 (Razorpay theme, builder badge, idle nudge, Scene 9 shows how Razorpay works today)
 
 ---
 
@@ -58,7 +58,12 @@ Use these names and descriptions everywhere: images, copy and the demo data.
 
 ## 3. Look, feel and sound
 
-### Portal 1: warm and human
+### Portal 1: Razorpay's palette, human photography
+- **Theme (v1.2):** Razorpay's colours replace the clay palette: primary blue `#305EFF`, secondary blue `#4D7FFF`, navy `#192839`, deep navy background `#0A1424`, success green `#009E5C`. The fonts and sizing are unchanged. Photos stay warm.
+- **Builder badge (top-left, every screen, including the intro gate):** Razorpay mark · *AI Build Challenge · Track 2* · *by Aditya Firoda*.
+- **Idle nudge:** if the viewer hasn't scrolled for 10 seconds (counted from the tap to begin), a "Keep scrolling ↓" pill appears and the page glides forward about a third of a screen. It repeats at most every 15 seconds, never on the final scene, and shows the pill only under reduced motion.
+
+*(Original palette notes below are kept for reference.)*
 - **Palette:** clay terracotta `#C8643B`, cream `#F6EFE6`, deep ink `#1E1B18`, soft sage `#8FA58A`, alert red `#E5484D` (used only for "failed"), UPI-green `#1DB954` (used only for "debited / success" moments).
 - **Photography:** warm, cinematic, natural light, shallow depth of field. Night scenes are dim and blue-amber; morning scenes are golden.
 - **Type:** large, confident headlines (serif for the story lines, sans-serif for phone UI). Story lines sit in the lower third or beside the image, never over a face.
@@ -118,7 +123,7 @@ Use these names and descriptions everywhere: images, copy and the demo data.
 | Open | Black screen. The clock pill fades in first. | 0–600 ms after load |
 | Image | Priya on her sofa at night, lit by a warm lamp and the glow of her phone. Fades in with a slow zoom (105% → 100%). | 600–1800 ms |
 | Line 1 | **"Meet Priya."** fades up, lower left. | starts at 1.4 s |
-| Line 2 | **"She's been waiting all week for tomorrow."** fades up beneath. | starts at 2.2 s |
+| Line 2 | **"All week, she's been counting down to Sunday's 10 AM pottery class."** fades up beneath. | starts at 2.2 s |
 | Scroll | As the viewer scrolls, the camera "pushes in" toward her phone (the image scales to 115% around the phone), handing over to Scene 2. | scroll-linked |
 
 **Sound:** a faint room-tone hush (almost silent), then a soft clock tick when the pill appears.
@@ -278,7 +283,11 @@ with Arjun  (small round avatar)
 
 ---
 
-### Scene 9: "The clock"
+### Scene 9: "The clock" (v1.2 redesign: how Razorpay handles it today)
+
+**Redesign:** a two-column stage. **Left: a "How it works today" card** with the Razorpay mark, *Late payment · Authorised, held · ₹2,000*, a live countdown *Auto-refund if not captured in 2d 13h 58m*, and *Today, Ritu has two choices:* ✕ **Capture it**, but there's no seat left to give her · ✕ **Do nothing**, it auto-refunds and Priya is gone, plus a small note that Razorpay holds a late-authorised payment until it's captured or the capture window ends. **Right:** *Ritu, at 8 AM* with the three question bubbles. The bottom line is unchanged. Beats: card rises → status → timer → the two options appear with a muted buzz each → bubbles pop → line.
+
+*Original version (kept for reference):*
 **Clock:** Sun · 8:02 AM · **Scroll length:** 2 screens · **Image:** P1-09 (students arriving, soft-focus background)
 
 **Layout:** the studio comes alive in the background (students arriving for the 10 AM class, slightly blurred). In the foreground:
@@ -701,7 +710,7 @@ All sounds are short (under 1.5 s), soft, and royalty-free or generated. **Don't
 ### Portal 1
 | Scene | Copy |
 |---|---|
-| 1 | **Meet Priya.** / She's been waiting all week for tomorrow. |
+| 1 | **Meet Priya.** / All week, she's been counting down to Sunday's 10 AM pottery class. |
 | 2 | One seat left. With the instructor everyone asks for. · Card: *Wheel Basics · Sun 11 Oct · 10:00 AM · with Arjun · 1 seat left* |
 | 3 | **Ritu runs Clay & Co.** / Eight wheels. Every seat counts. |
 | 4 | She pays. And waits. · Phone: *Clay & Co. · Wheel Basics · ₹2,000 · Pay via UPI* → *Processing… Do not press back* |

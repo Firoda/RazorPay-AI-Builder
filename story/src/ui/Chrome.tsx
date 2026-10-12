@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { Volume2, VolumeX } from "lucide-react";
 import { isMuted, onMuteChange, play, setMuted, unlock } from "../../../shared/sound";
-import { gsap, ScrollTrigger, scrollToElement, startSmoothScroll } from "../engine/scroll";
+import { gsap, nudgeScroll, prefersReducedMotion, ScrollTrigger, scrollToElement, startSmoothScroll } from "../engine/scroll";
 import { setStory, useStory } from "../engine/storyState";
 import { DEMO_URL, SCENES } from "../story.config";
+import { BuilderBadge } from "./Brand";
 
 /** "Tap to begin": the deliberate gesture that unlocks sound (scrolling can't). */
 export function IntroGate() {
@@ -36,6 +37,7 @@ export function IntroGate() {
   if (started) return null;
   return (
     <div className="gate" ref={ref} role="dialog" aria-label="Start the story">
+      <div className="gate-brand"><BuilderBadge /></div>
       <button className="gate-begin" onClick={() => begin(true)} autoFocus>
         <span className="gate-title">Tap to begin</span>
         <span className="gate-sub"><Volume2 size={16} /> best with sound</span>
@@ -53,7 +55,7 @@ export function ClockPill() {
   useEffect(() => {
     if (clock === shown) return;
     if (started) play("tick");
-    gsap.fromTo(ref.current, { autoAlpha: 0.2, y: -4 }, { autoAlpha: 1, y: 0, duration: 0.25 });
+    gsap.fromTo(ref.current, { autoAlpha: 0.2 }, { autoAlpha: 1, duration: 0.25 });
     setShown(clock);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clock]);
@@ -114,4 +116,47 @@ export function MuteToggle() {
 
 export function SkipLink() {
   return <a className="skip-link" href={DEMO_URL}>Skip to the demo →</a>;
+}
+
+/**
+ * If the viewer hasn't scrolled for a while, show "Keep scrolling" and gently glide the page forward
+ * (reduced motion: the hint only). Never on the final scene.
+ */
+export function IdleNudge({ idleMs = 10_000, repeatMs = 15_000 }: { idleMs?: number; repeatMs?: number }) {
+  const { started, activeScene } = useStory();
+  const [visible, setVisible] = useState(false);
+  const last = useRef(Date.now());
+  const lastNudge = useRef(0);
+  const sceneRef = useRef(activeScene);
+  sceneRef.current = activeScene;
+
+  useEffect(() => {
+    if (!started) return;
+    last.current = Date.now(); // the idle clock starts when the story starts, not on page load
+    const reset = () => {
+      last.current = Date.now();
+      setVisible(false);
+    };
+    const events = ["wheel", "touchmove", "keydown", "pointerdown"] as const;
+    events.forEach((e) => window.addEventListener(e, reset, { passive: true }));
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      if (sceneRef.current === "s10" || document.visibilityState !== "visible") return setVisible(false);
+      if (now - last.current < idleMs || now - lastNudge.current < repeatMs) return;
+      lastNudge.current = now;
+      setVisible(true);
+      if (!prefersReducedMotion()) nudgeScroll(window.innerHeight * 0.3);
+      window.setTimeout(() => setVisible(false), 3500);
+    }, 1000);
+    return () => {
+      events.forEach((e) => window.removeEventListener(e, reset));
+      window.clearInterval(timer);
+    };
+  }, [started, idleMs, repeatMs]);
+
+  return (
+    <div className={`idle-nudge ${visible ? "show" : ""}`} aria-live="polite">
+      {visible ? "Keep scrolling ↓" : ""}
+    </div>
+  );
 }

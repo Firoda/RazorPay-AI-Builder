@@ -38,3 +38,10 @@ export function refreshSoon(): void {
   window.clearTimeout(refreshTimer);
   refreshTimer = window.setTimeout(() => ScrollTrigger.refresh(), 150);
 }
+
+/** Gentle forward nudge for idle viewers (smooth, short). */
+export function nudgeScroll(px: number): void {
+  const target = window.scrollY + px;
+  if (lenis) lenis.scrollTo(target, { duration: 1.2 });
+  else window.scrollTo({ top: target, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+}

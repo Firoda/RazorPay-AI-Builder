@@ -23,7 +23,7 @@ export const SCENES: SceneConfig[] = [
 ];
 
 export const COPY = {
-  s01: { a: "Meet Priya.", b: "She's been waiting all week for tomorrow." },
+  s01: { a: "Meet Priya.", b: "All week, she's been counting down to Sunday's 10 AM pottery class." },
   s02: { line: "One seat left. With the instructor everyone asks for.", card: { title: "Wheel Basics", when: "Sun 11 Oct · 10:00 AM", who: "with Arjun", left: "1 seat left" } },
   s03: { a: "Ritu runs Clay & Co.", b: "Eight wheels. Every seat counts." },
   s04: { line: "She pays. And waits.", merchant: "Clay & Co.", item: "Wheel Basics · Sun 10 AM", amount: "₹2,000" },
@@ -41,13 +41,31 @@ export const COPY = {
     line: "Ritu has a payment, a customer and no seat.",
     bubbles: ["Money got debited but no booking!!", "I can only do Sunday mornings", "and I really want Arjun sir 🙏"],
   },
-  s09: { line: "Do nothing, and the money quietly goes back. So does Priya.", bubbles: ["Refund her?", "Find another class?", "Which one would she even want?"] },
+  s09: {
+    line: "Do nothing, and the money quietly goes back. So does Priya.",
+    bubbles: ["Refund her?", "Find another class?", "Which one would she even want?"],
+    today: {
+      kicker: "How it works today",
+      status: "Late payment · Authorised, held",
+      amount: "₹2,000",
+      timerLabel: "Auto-refund if not captured in",
+      optionsTitle: "Today, Ritu has two choices:",
+      options: [
+        { act: "Capture it", result: "but there's no seat left to give her" },
+        { act: "Do nothing", result: "it auto-refunds, and Priya is gone" },
+      ],
+      note: "Razorpay holds a late-authorised payment until it's captured or the capture window ends.",
+    },
+  },
   s10: {
     lines: ["Payment failed.", "Money debited.", "Seat gone.", "Customer waiting."],
     question: "What if the money could still find her a seat?",
     cta: "Let's find out →",
   },
 };
+
+/** Builder credit shown top-left. */
+export const BRAND = { track: "AI Build Challenge · Track 2", author: "Aditya Firoda" };
 
 /** Where the story hands over to Portal 2. */
 export const DEMO_URL = "/app/#/welcome?from=story";

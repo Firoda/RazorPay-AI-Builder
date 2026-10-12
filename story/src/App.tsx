@@ -2,7 +2,8 @@ import { useEffect } from "react";
 import { refreshSoon } from "./engine/scroll";
 import { Scene01, Scene02, Scene03, Scene04, Scene05 } from "./scenes/ScenesA";
 import { Scene06a, Scene06b, Scene07, Scene08, Scene09, Scene10 } from "./scenes/ScenesB";
-import { ChapterDots, ClockPill, IntroGate, MuteToggle, ProgressLine, SkipLink } from "./ui/Chrome";
+import { BuilderBadge } from "./ui/Brand";
+import { ChapterDots, ClockPill, IdleNudge, IntroGate, MuteToggle, ProgressLine, SkipLink } from "./ui/Chrome";
 import { LensToggle } from "./ui/Lens";
 
 export function App() {
@@ -17,6 +18,7 @@ export function App() {
       <IntroGate />
       <ProgressLine />
       <header className="chrome-top">
+        <BuilderBadge />
         <ClockPill />
         <div className="chrome-right">
           <SkipLink />
@@ -24,6 +26,7 @@ export function App() {
         </div>
       </header>
       <ChapterDots />
+      <IdleNudge />
       <div className="chrome-bottom-right"><LensToggle /></div>
       <main>
         <Scene01 />
