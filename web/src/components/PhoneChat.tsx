@@ -85,7 +85,7 @@ export function PhoneChat({ d, run, busy, full = false }: { d: CaseDetail; run: 
             <button className="refund" disabled={busy} onClick={() => choose("refund")}>Refund instead</button>
           </div>
         )}
-        {d.state === "RESCUED" && <div className="chat-status">✓ Booking confirmed</div>}
+        {d.state === "RESCUED" && <PaymentReceipt d={d} />}
         {d.case.stopContact && <div className="chat-status">Customer opted out. No more messages will be sent.</div>}
       </div>
       {suggestions.length > 0 && (
@@ -109,6 +109,23 @@ export function PhoneChat({ d, run, busy, full = false }: { d: CaseDetail; run: 
         <input type="checkbox" checked={fromUnknown} onChange={(e) => setFromUnknown(e.target.checked)} />
         Send from a different number (identity test)
       </label>
+    </div>
+  );
+}
+
+/** Shown on the customer's phone the moment the seat is reserved and the payment captured. */
+function PaymentReceipt({ d }: { d: CaseDetail }) {
+  const sessionId = d.case.rescuedSessionId;
+  const session = d.candidates.find((x) => x.sessionId === sessionId)?.session ?? d.offered.find((x) => x.id === sessionId);
+  const real = d.payment?.source === "razorpay_test";
+  return (
+    <div className="chat-receipt" data-tour="receipt" role="status">
+      <div className="cr-head"><span className="cr-check" aria-hidden>✓</span> Payment successful</div>
+      <div className="cr-amount num">{d.amount}</div>
+      <div className="cr-row"><span>Paid to</span><b>Clay &amp; Co.</b></div>
+      {session && <div className="cr-row"><span>Booking</span><b>{session.label.split(" · ")[0]}</b></div>}
+      {d.payment?.id && <div className="cr-row"><span>Payment ID</span><b className="num">{d.payment.id}</b></div>}
+      <div className="cr-foot">Booking confirmed · {real ? "Razorpay test mode, no real money" : "simulated payment"}</div>
     </div>
   );
 }

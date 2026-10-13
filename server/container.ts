@@ -59,6 +59,8 @@ export function buildContainer(env: NodeJS.ProcessEnv = process.env, aiOverride?
 
   const makeSandbox = (ai: AiProvider): Sandbox => {
     const store = new Store();
+    // Real dates and timestamps for visitors. Tests keep the fixed fixture dates; LIVE_TIME=0 forces them anywhere.
+    store.liveTime = (env.LIVE_TIME ?? (process.env.VITEST ? "0" : "1")) !== "0";
     const real = hasRazorpay ? new RazorpayTestGateway(keyId, keySecret, store) : null;
     const gateway = new GatewayRouter(new SimulatedGateway(store), real);
     const engine = new CaseEngine({ store, ai, gateway, calendar: new CalendarAdapter(store) });

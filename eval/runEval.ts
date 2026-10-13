@@ -64,7 +64,8 @@ interface RunResult {
 }
 
 async function runScenario(sc: Scenario, run: number): Promise<RunResult> {
-  const { store, engine } = buildContainer(env, built.ai);
+  // Evals always use the fixed fixture dates, so results stay comparable across runs.
+  const { store, engine } = buildContainer({ ...env, LIVE_TIME: "0" }, built.ai);
   const base: RunResult = {
     id: sc.id, run, decision: "", offered: [], checks: {}, hardViolations: 0, mustNotViolations: 0,
     falseMoneyActions: 0, schemaRetries: 0, aiCalls: 0, latencyMs: 0, models: [],

@@ -136,3 +136,24 @@ describe("real payment pool", () => {
     expect(pool.status()).toMatchObject({ total: 3, available: 0 });
   });
 });
+
+describe("live time for visitors", () => {
+  it("lays the case out relative to now, with the original class on the next Sunday and real timestamps", async () => {
+    const { Store } = await import("../server/store/memoryStore");
+    const store = new Store();
+    store.liveTime = true;
+    const before = Date.now();
+    const ev = applyScenario(store, getScenario("G01")!);
+    const payment = store.payments.get(ev.paymentId)!;
+    const booking = [...store.bookings.values()][0];
+    const original = store.sessions.get(booking.sessionId)!;
+    const classStart = Date.parse(`${original.date}T${original.start}:00+05:30`);
+
+    expect(new Date(`${original.date}T12:00:00+05:30`).getUTCDay()).toBe(0); // still a Sunday
+    expect(classStart).toBeGreaterThan(before); // upcoming, not in the past
+    expect(original.id).toBe(`S-${original.date.slice(5, 7)}${original.date.slice(8, 10)}-AM`); // id matches its date
+    expect(Date.parse(payment.createdAt)).toBeLessThan(before); // paid last night
+    expect(Math.abs(store.now().getTime() - Date.now())).toBeLessThan(2000); // the clock is real
+    expect(Date.parse(store.messages[0].at)).toBeLessThanOrEqual(Date.now()); // messaged earlier this morning
+  });
+});

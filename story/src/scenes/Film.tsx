@@ -3,7 +3,7 @@ import { ChevronDown, Lock, LockOpen, Play, RotateCcw, SkipForward } from "lucid
 import { isMuted, onMuteChange, play, type Cue } from "../../../shared/sound";
 import { gsap } from "../engine/scroll";
 import { useStory } from "../engine/storyState";
-import { Checkout, ChatHeader, ClassCard, LockNotification, Phone, SeatRow, SmsNotification } from "../mockups/Mockups";
+import { Checkout, ChatHeader, ClassCard, Phone, SeatRow, SmsNotification } from "../mockups/Mockups";
 import { COPY, DEMO_URL } from "../story.config";
 import { RazorpayMark } from "../ui/Brand";
 import { LensNotes } from "../ui/Lens";
@@ -31,9 +31,9 @@ const PARTS: PartDef[] = [
   { kind: "clip", clip: 2, dur: 8, clock: "Sun · 8:00 AM" },
 ];
 /** When the "Scroll to continue" hint appears in each part (seconds into the part). */
-const READY_AT = [3.4, 7.9, 3.4, 7.9, 3.4, 7.9];
+const READY_AT = [3.4, 7.9, 3.4, 7.9, 4.2, 7.9];
 /** The earliest a scroll moves on, for fast readers: once the part's key line is on screen. */
-const ADVANCE_FROM = [2.6, 4.6, 2.8, 4.2, 2.6, 5.4];
+const ADVANCE_FROM = [2.6, 4.6, 2.8, 4.2, 3.0, 5.4];
 
 /** Sound cues fired once per part when its local time passes `at` (seconds). */
 const CUES: [number, Cue][][] = [
@@ -41,7 +41,7 @@ const CUES: [number, Cue][][] = [
   [[0.9, "tap"], [2.9, "errorThud"], [4.3, "smsDing"]],
   [[1.0, "countdown"], [1.6, "countdown"], [2.2, "countdown"], [2.6, "unlock"]],
   [[4.0, "booked"]],
-  [[1.0, "ding"]],
+  [[0.9, "ding"], [2.6, "buzzWrong"]],
   [[2.1, "ding"], [3.1, "ding2"], [4.2, "buzzWrong"]],
 ];
 
@@ -252,10 +252,37 @@ function Film({ active, onDone }: { active: boolean; onDone: () => void }) {
       </div>
 
       {/* Card · 11 PM: the bank finally says yes, too late */}
-      <div className={`film-titlecard ${isCard("night") ? "in" : ""}`}>
-        <p className={`tc-line ${cardOn("night", 0.2) ? "in" : ""}`}>At 11 PM, two hours late, Priya's bank finally confirms her payment.</p>
-        <div className={`tc-visual ${cardOn("night", 1.0) ? "in" : ""}`}><LockNotification text={COPY.s07.notif} /></div>
-        <p className={`tc-line tc-sub ${cardOn("night", 2.6) ? "in" : ""}`}>Razorpay now holds her ₹2,000 for Clay &amp; Co., but the seat she paid for has already been sold.</p>
+      <div className={`film-titlecard split ${isCard("night") ? "in" : ""}`}>
+        {/* Priya's lock screen: the payment goes through, the booking does not */}
+        <div className={`tc-phone ${cardOn("night", 0.3) ? "in" : ""}`}>
+          <Phone time="11:00" dark>
+            <div className="lockscreen">
+              <div className="ls-clock num">11:00</div>
+              <div className="ls-date">Saturday, 10 October</div>
+              <div className={`ls-notif ok ${cardOn("night", 0.9) ? "in" : ""}`}>
+                <span className="ls-icon">✓</span>
+                <div>
+                  <div className="ls-app">Payments · now</div>
+                  <div className="ls-title">Payment successful</div>
+                  <div className="ls-text">₹2,000 paid to Clay &amp; Co. for Wheel Basics, Sunday 10 AM.</div>
+                </div>
+              </div>
+              <div className={`ls-notif bad ${cardOn("night", 2.6) ? "in" : ""}`}>
+                <span className="ls-icon">C</span>
+                <div>
+                  <div className="ls-app">Clay &amp; Co. · now</div>
+                  <div className="ls-title">Booking not confirmed</div>
+                  <div className="ls-text">Sorry, Sunday's 10 AM class is now full. We could not confirm your seat.</div>
+                </div>
+              </div>
+            </div>
+          </Phone>
+        </div>
+        <div className="tc-text">
+          <p className={`tc-line ${cardOn("night", 0.2) ? "in" : ""}`}>At 11 PM, two hours late, Priya's bank finally confirms her payment.</p>
+          <p className={`tc-line tc-sub ${cardOn("night", 1.4) ? "in" : ""}`}>Priya is told that her payment of ₹2,000 to Clay &amp; Co. was successful.</p>
+          <p className={`tc-line tc-sub ${cardOn("night", 3.0) ? "in" : ""}`}>But her booking was never confirmed: the seat she paid for has already been sold. Razorpay is now holding her money for Clay &amp; Co., with no seat to show for it.</p>
+        </div>
       </div>
 
       {/* Shot 3 · Ritu: Priya's messages, and a full class */}

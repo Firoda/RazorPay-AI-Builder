@@ -82,6 +82,26 @@
 .tc-hold { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 999px; background: rgba(48, 94, 255, 0.16); border: 1px solid rgba(77, 127, 255, 0.5); color: #c9d6ff; font-weight: 700; font-size: 17px; transition: all 0.3s ease; }
 .tc-hold.released { background: rgba(229, 72, 77, 0.16); border-color: rgba(229, 72, 77, 0.55); color: #ffb4b6; }
 
+/* 11 PM card: Priya's phone on the left, the explanation on the right */
+.film-titlecard.split { flex-direction: row; align-items: center; justify-content: center; gap: clamp(28px, 5vw, 72px); text-align: left; }
+.film-titlecard.split .tc-text { display: flex; flex-direction: column; gap: 18px; max-width: 560px; }
+.film-titlecard.split .tc-line { max-width: none; }
+.tc-phone { opacity: 0; transform: translateX(-24px); transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.22, 1, 0.36, 1); }
+.tc-phone.in { opacity: 1; transform: none; }
+.tc-phone .phone { width: min(270px, 26vw); }
+.lockscreen { position: absolute; inset: 0; padding: 64px 12px 16px; background: radial-gradient(ellipse at 30% 10%, #2b3a63, #0b1224 70%); color: #fff; display: flex; flex-direction: column; gap: 10px; }
+.ls-clock { text-align: center; font-size: 52px; font-weight: 300; letter-spacing: -0.02em; line-height: 1; }
+.ls-date { text-align: center; font-size: 13px; color: rgba(255, 255, 255, 0.75); margin-bottom: 14px; }
+.ls-notif { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 16px; background: rgba(255, 255, 255, 0.16); backdrop-filter: blur(10px); opacity: 0; transform: translateY(-10px) scale(0.97); transition: opacity 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.ls-notif.in { opacity: 1; transform: none; }
+.ls-icon { width: 30px; height: 30px; flex-shrink: 0; border-radius: 8px; display: grid; place-items: center; font-weight: 800; font-size: 14px; }
+.ls-notif.ok .ls-icon { background: #009e5c; }
+.ls-notif.bad .ls-icon { background: var(--clay); font-family: var(--serif); }
+.ls-notif.bad { box-shadow: inset 3px 0 0 #e5484d; }
+.ls-app { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; color: rgba(255, 255, 255, 0.7); }
+.ls-title { font-weight: 700; font-size: 13.5px; margin-top: 1px; }
+.ls-text { font-size: 12.5px; line-height: 1.35; color: rgba(255, 255, 255, 0.9); }
+
 /* How it works today */
 .today-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 80px 16px 40px; background: radial-gradient(ellipse at 50% 30%, #13213a, var(--ink) 70%); }
 .today-screen .today-card { width: min(440px, 100%); }
@@ -101,6 +121,8 @@
   .film-card .class-title { font-size: 20px; }
   .film-caption { bottom: 70px; font-size: 18px; }
   .film-titlecard { gap: 16px; }
+  .film-titlecard.split { flex-direction: column; text-align: center; gap: 14px; }
+  .tc-phone .phone { width: 170px; }
   .film-titlecard .class-card { width: 240px; padding: 14px; }
   .film-clock { top: 62px; font-size: 12px; }
   .film-credit { display: none; }
@@ -110,3 +132,4 @@
 @media (prefers-reduced-motion: reduce) {
   .film-phone, .film-card, .film-notif, .film .bubble, .film .sms-wrap, .film-full { transition: opacity 0.2s linear; }
 }
+.phone-dark .phone-status { color: #fff; }

@@ -41,6 +41,16 @@ export class Store {
   faults = { reserveFailures: 0, captureFailures: 0 };
 
   private clock: Date | null = null;
+  /** Offset added to the real clock when it is running (live mode). */
+  private offsetMs = 0;
+  /**
+   * Visitor sandboxes run on the real clock: scenarios are laid out relative to now and the calendar
+   * moves forward in whole weeks, so dates and timestamps are real. Tests and evals keep fixed dates.
+   */
+  liveTime = false;
+  /** Whole weeks the calendar has been moved forward, and fixture session id → shifted id. */
+  calendarWeeks = 0;
+  private sessionIds = new Map<string, string>();
   private counters = new Map<string, number>();
 
   constructor() {
@@ -63,11 +73,14 @@ export class Store {
     this.seenEvents.clear();
     this.faults = { reserveFailures: 0, captureFailures: 0 };
     this.clock = null;
+    this.offsetMs = 0;
+    this.calendarWeeks = 0;
+    this.sessionIds.clear();
     this.counters.clear();
   }
 
   now(): Date {
-    return this.clock ? new Date(this.clock) : new Date();
+    return this.clock ? new Date(this.clock) : new Date(Date.now() + this.offsetMs);
   }
 
   nowIso(): string {
@@ -79,7 +92,34 @@ export class Store {
   }
 
   advance(ms: number): void {
-    this.clock = new Date(this.now().getTime() + ms);
+    if (this.clock) this.clock = new Date(this.clock.getTime() + ms);
+    else this.offsetMs += ms;
+  }
+
+  /** Runs the clock in real time, shifted by `ms` (live mode). */
+  setLiveOffset(ms: number): void {
+    this.clock = null;
+    this.offsetMs = ms;
+  }
+
+  /** Moves every class in the calendar forward by whole weeks (weekdays and times stay the same). */
+  shiftCalendarWeeks(weeks: number): void {
+    if (weeks === this.calendarWeeks) return;
+    this.sessions = new Map();
+    this.sessionIds.clear();
+    for (const s of readFixture<Session[]>("sessions.json")) {
+      const [y, m, d] = s.date.split("-").map(Number);
+      const date = new Date(Date.UTC(y, m - 1, d + 7 * weeks)).toISOString().slice(0, 10);
+      const id = s.id.replace(/^S-\d{4}/, `S-${date.slice(5, 7)}${date.slice(8, 10)}`);
+      this.sessionIds.set(s.id, id);
+      this.sessions.set(id, { ...s, id, date });
+    }
+    this.calendarWeeks = weeks;
+  }
+
+  /** The current id of a session named in the fixtures (it changes when the calendar is shifted). */
+  sessionIdFor(fixtureId: string): string {
+    return this.sessionIds.get(fixtureId) ?? fixtureId;
   }
 
   nextId(prefix: string): string {

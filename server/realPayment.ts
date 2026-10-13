@@ -41,7 +41,7 @@ export class RealPaymentFlow {
     if (!this.gateway) throw new EngineError("Razorpay test keys are not configured", 503);
     const sc = getScenario(scenarioId);
     if (!sc || sc.group === "system") throw new EngineError("Pick a customer scenario (e.g. G01)", 404);
-    const amountPaise = this.store.sessions.get("S-1011-AM")!.pricePaise;
+    const amountPaise = this.store.sessions.get(this.store.sessionIdFor("S-1011-AM"))!.pricePaise;
     let bookingId: string | undefined;
     let customerId: string | undefined;
     if (!opts.pool) ({ bookingId, customerId } = prepareBooking(this.store, sc, `-R${++this.counter}`));

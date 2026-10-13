@@ -47,7 +47,7 @@ export const STEPS: TourStep[] = [
   {
     id: "timeline", persona: "ritu", route: "case", target: '[data-tour="timeline"]',
     title: "What happened, in order",
-    body: "Paid at 9 PM. Marked failed. Seat resold. The bank confirmed at 11 PM. The money is held, not lost.",
+    body: "Priya paid, and the app told her it had failed. Her seat was resold, and two hours later her bank confirmed the payment. Every time here is real. The money is held, not lost.",
   },
   {
     id: "needs", persona: "ritu", route: "case", target: '[data-tour="needs"]',
@@ -80,6 +80,13 @@ export const STEPS: TourStep[] = [
     waitFor: (d) => d.state === "OFFER_SENT",
     action: "book",
     nextText: "▶ Watch Priya book",
+  },
+  {
+    id: "receipt", persona: "priya", route: "case", target: '[data-tour="receipt"]',
+    title: "Priya gets her confirmation straight away",
+    body: "The moment her seat is reserved and the ₹2,000 is captured, Priya (the customer) receives a payment receipt and a booking confirmation on her phone. No chasing, no uncertainty.",
+    waitFor: (d) => d.state === "RESCUED",
+    waitText: "Reserving the seat, then capturing the payment…",
   },
   {
     id: "audit", persona: "ritu", route: "case", target: '[data-tour="audit-tab"]',

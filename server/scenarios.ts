@@ -47,6 +47,28 @@ export const DEFAULTS = {
   originalSessionId: "S-1011-AM",
 };
 
+/** Start of the original class in the fixtures (Sunday 10 AM); live mode moves it to the next upcoming Sunday. */
+const ORIGINAL_CLASS_START = "2026-10-11T10:00:00+05:30";
+const WEEK_MS = 7 * DAY_MS;
+
+/**
+ * Sets the store's clock for a scenario and returns a function that places a fixture timestamp in time.
+ * Fixed mode (tests, evals): the clock is frozen at the fixture's "now". Live mode (visitors): the clock is
+ * real, the calendar moves forward in whole weeks so the original class is the next Sunday, and each event
+ * keeps its distance from "now" (paid last night, confirmed two hours later, messaged this morning).
+ */
+function layOut(store: Store, scenarioNow: string | undefined): (fixtureTime: string) => string {
+  if (!store.liveTime) {
+    store.setNow(scenarioNow ?? DEFAULTS.now);
+    return (t) => new Date(t).toISOString();
+  }
+  const realNow = Date.now();
+  store.shiftCalendarWeeks(Math.max(0, Math.ceil((realNow + 2 * 3600_000 - Date.parse(ORIGINAL_CLASS_START)) / WEEK_MS)));
+  const base = Date.parse(DEFAULTS.now);
+  store.setLiveOffset(scenarioNow ? Date.parse(scenarioNow) - base : 0);
+  return (t) => new Date(realNow - (base - Date.parse(t))).toISOString();
+}
+
 let cache: Scenario[] | null = null;
 
 export function loadScenarios(): Scenario[] {
@@ -75,14 +97,14 @@ export function prepareBooking(store: Store, sc: Scenario, suffix: string): { cu
   const customerId = `C-${key}`;
   const bookingId = `B-${key}`;
   const contact = contactFor(key);
-  store.setNow(sc.overrides?.now ?? DEFAULTS.now);
+  layOut(store, sc.overrides?.now);
   store.customers.set(customerId, { id: customerId, name: sc.customer.name, contact, language: sc.customer.language });
   for (const so of sc.overrides?.sessions ?? []) {
-    const sess = store.sessions.get(so.id);
+    const sess = store.sessions.get(store.sessionIdFor(so.id));
     if (sess) sess.booked = so.booked;
   }
   store.bookings.set(bookingId, {
-    id: bookingId, customerId, sessionId: DEFAULTS.originalSessionId, seats: 1, status: "released",
+    id: bookingId, customerId, sessionId: store.sessionIdFor(DEFAULTS.originalSessionId), seats: 1, status: "released",
     holdExpiresAt: store.nowIso(),
   });
   for (const m of sc.messages) {
@@ -104,25 +126,25 @@ export function applyScenario(store: Store, sc: Scenario): PaymentEvent {
   const bookingId = `B-${sc.id}`;
   const contact = contactFor(sc.id);
   const o = sc.overrides ?? {};
-  store.setNow(o.now ?? DEFAULTS.now);
+  const at = layOut(store, o.now);
 
   store.customers.set(customerId, { id: customerId, name: sc.customer.name, contact, language: sc.customer.language });
   for (const so of o.sessions ?? []) {
-    const sess = store.sessions.get(so.id);
+    const sess = store.sessions.get(store.sessionIdFor(so.id));
     if (sess) sess.booked = so.booked;
   }
 
-  const original = store.sessions.get(DEFAULTS.originalSessionId)!;
+  const original = store.sessions.get(store.sessionIdFor(DEFAULTS.originalSessionId))!;
   store.bookings.set(bookingId, {
     id: bookingId,
     customerId,
     sessionId: original.id,
     seats: 1,
     status: "released",
-    holdExpiresAt: new Date(Date.parse(DEFAULTS.createdAt) + 10 * 60_000).toISOString(),
+    holdExpiresAt: new Date(Date.parse(at(DEFAULTS.createdAt)) + 10 * 60_000).toISOString(),
   });
 
-  const createdAt = new Date(DEFAULTS.createdAt).toISOString();
+  const createdAt = at(DEFAULTS.createdAt);
   const status = o.payment?.status ?? "authorized";
   store.payments.set(paymentId, {
     id: paymentId,
@@ -131,8 +153,8 @@ export function applyScenario(store: Store, sc: Scenario): PaymentEvent {
     status,
     method: "upi",
     createdAt,
-    authorizedAt: status === "failed" ? undefined : new Date(DEFAULTS.authorizedAt).toISOString(),
-    capturedAt: status === "captured" ? new Date(DEFAULTS.authorizedAt).toISOString() : undefined,
+    authorizedAt: status === "failed" ? undefined : at(DEFAULTS.authorizedAt),
+    capturedAt: status === "captured" ? at(DEFAULTS.authorizedAt) : undefined,
     captureDeadline: new Date(Date.parse(createdAt) + 3 * DAY_MS).toISOString(),
     notes: { booking_id: bookingId, customer_id: customerId },
     refundStatus: o.payment?.refundStatus ?? "none",
@@ -140,7 +162,7 @@ export function applyScenario(store: Store, sc: Scenario): PaymentEvent {
   });
 
   for (const ob of o.otherBookings ?? []) {
-    store.bookings.set(ob.id, { ...ob, customerId, holdExpiresAt: createdAt });
+    store.bookings.set(ob.id, { ...ob, sessionId: store.sessionIdFor(ob.sessionId), customerId, holdExpiresAt: createdAt });
   }
   for (const op of o.otherPayments ?? []) {
     store.payments.set(op.id, {
@@ -153,7 +175,7 @@ export function applyScenario(store: Store, sc: Scenario): PaymentEvent {
   for (const m of sc.messages) {
     store.messages.push({
       id: store.nextId("msg"), customerId, direction: "inbound", fromContact: m.fromContact ?? contact,
-      text: m.text, at: new Date(DEFAULTS.messageAt).toISOString(),
+      text: m.text, at: at(DEFAULTS.messageAt),
     });
   }
 
