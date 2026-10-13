@@ -2,7 +2,18 @@
 
 **Builder:** Aditya Firoda · **Challenge:** Razorpay × ISB AI PM Build Challenge, Track 2 (Recover and Grow with AI) · **Built:** 3 to 13 October 2026
 
-**Prototype:** [add the live link] · **Code:** this repository · **Day-by-day timeline:** [AI_build_log_daily.md](AI_build_log_daily.md)
+**Prototype:** [razorpay-ai-builder.onrender.com](https://razorpay-ai-builder.onrender.com/) (story at `/`, product at `/app/`) · **Code:** this repository · **Day-by-day timeline:** [AI_build_log_daily.md](AI_build_log_daily.md)
+
+---
+
+## At a glance
+
+- **What I built:** SeatSaver, an AI agent that rescues a booking when a customer's payment is confirmed late, after their seat has been resold.
+- **Tools:** manual Google Search and direct reading for research; Claude (research synthesis, design, all code and tests); Gemini 3.8 Flash (the AI inside the product), OpenAI images and Google Flow (visuals), Google AI Studio (first deployment).
+- **How AI is used in the product:** three narrow Gemini prompts that read the customer's messages, rank only sessions that code has already approved, and interpret replies. Code handles every amount, date, seat and payment action.
+- **Results:** 17 of 18 development cases and 3 of 3 fresh held-out cases correct; a fixed rule scored 0%; zero wrong money actions; 53 automated tests.
+- **The most important decision I made against AI advice:** an AI reassessment recommended dropping SeatSaver for a broader idea. I kept it, with its weaknesses written down, because the alternative had a weaker AI role and overlapped Razorpay's own tools (section 3.2).
+- **Biggest limitations:** synthetic data only, a small evaluation, no merchant interviews yet, and a narrow trigger (Razorpay puts late authorisations at under 0.5% of payments).
 
 ---
 
@@ -28,7 +39,8 @@ The demo follows one story. **Priya** (the customer) paid ₹2,000 for a Sunday 
 | **Google AI Studio** | Gemini, in its build and deploy tooling | The first public deployment of the prototype | Deployment configuration, `server.ts` |
 | **OpenAI image generation** | ChatGPT image generation | Realistic photographs of the characters and the studio, used in both parts of the demo | `OpenAI_image.md`, `story/public/img`, `web/public/img` |
 | **Google Flow** | Veo video model | Three eight-second video clips that open the story | `Google_Flow_video.md`, `story/public/film` |
-| **[Research tool used on 3 to 5 October]** | [model] | Reading and summarising reviews, public sources and competitor material | `research/` folder in the parent project |
+| **Google Search** (manual) | Site-specific searches, e.g. `site:g2.com/products/razorpay/reviews "dislike"` | Finding reviews, official documentation, competitors and regulations; every source was opened and read directly | Research summary in section 2.1; sources at the end |
+| **Claude** (research assistant) | Claude | Summarising and comparing the sources I found, organising ideas into comparable cards, and arguing for alternatives when I asked it to challenge my choice | Sections 2.1 and 3.2 |
 
 Supporting services that are not AI but matter for honesty: **Razorpay test mode** (real test payments with manual capture), Node.js and TypeScript, React, and the Web Audio API for sound effects.
 
@@ -36,7 +48,29 @@ Supporting services that are not AI but matter for honesty: **Razorpay test mode
 
 ## 2. Key prompts, workflows and agent setup
 
-### 2.1 How the AI inside the product is set up
+### 2.1 How I used AI for research and the problem choice
+
+**Workflow.** I ran the research as seven workstreams, each with a single question, and used AI to read, summarise and compare the material so I could spend my time on judgement:
+
+| Workstream | Question I asked | Material |
+|---|---|---|
+| Razorpay platform | What exists natively, and what could a prototype honestly claim? | About 24 product families, Agent Studio, RAY, the Agentic Platform, API documentation |
+| Global payments | What is already standard beyond retries and reminders? | Stripe, Adyen, Checkout.com, Chargebee, Recurly, Xendit, Paystack and others |
+| Merchant problems | Where does purchase intent survive while operations block completion? | Shipping, booking and accounting workflows, public merchant accounts |
+| Startups | Are apparently new ideas already offered by specialists? | 15 YC and venture-backed companies, product documentation |
+| Reviews | Which real frustrations suggest a useful improvement? | G2, Capterra, Trustpilot, Reddit and public escalations |
+| Lighter alternatives | Can meaningful AI work with less integration? | Feedback, payment-link and collections tools |
+| My own balance idea | Who would hold the money, and is it allowed? | Wallet products and RBI directions |
+
+**Evidence rules I set before drawing conclusions.** Official documentation shows what is supported; vendor pages and YC profiles show advertised competition, not proven performance; reviews give concrete situations but not frequency or root cause; and my own concepts and examples are labelled as proposals. I read reviews individually, counted cross-posts once, downgraded promotional posts, kept resolved cases and positive counter-evidence, and did not calculate a complaint rate.
+
+**What the reviews showed.** Across eight recurring situations, such as a payment captured while access stayed locked, a refund promised but never issued, or a ticket passed between teams, the defensible theme was not that Razorpay fails. It was that **exceptions between a payment and the customer's outcome are handled unevenly**. A late-paid booking is one of those exceptions.
+
+**From about ten ideas to one.** I ranked the ideas on four criteria (documented problem, genuine need for AI, measurable outcome, demonstrable in a week) and set a decision rule in advance: choose the strongest idea I could demonstrate honestly without real merchant data. Later I stress-tested the choice against the strongest alternatives, including one of my own, before committing (section 3.2).
+
+The full research is summarised day by day in the [build timeline](AI_build_log_daily.md).
+
+### 2.2 How the AI inside the product is set up
 
 **The design principle.** Money must never depend on an AI guess. So the work is split: code handles every fact (amounts, prices, seat availability, deadlines, reserving and capturing), and the AI handles only what code cannot, which is understanding free-text messages that are often a mix of Hindi and English.
 
@@ -101,11 +135,11 @@ CODE   reserves the seat first, then captures the payment exactly once
 **Safety checks in code that run on every AI answer:**
 - The answer must match the JSON schema. If not, it is retried once and then passed to the owner.
 - Any session ID that code did not approve is rejected.
-- If an offer contradicts a month, date or class type the customer named, the case goes to the owner instead of being sent. This check was added after a real failure (see section 3).
+- If an offer contradicts a month, date or class type the customer named, the case goes to the owner instead of being sent. This check was added after a real failure (see section 3.1).
 - An idempotency ledger records every reservation and capture, so a repeated alert or a double click can never charge or book twice.
 - Only Razorpay **test** keys are accepted, so live money cannot be touched by accident.
 
-### 2.2 How I worked with Claude Code
+### 2.3 How I worked with Claude Code
 
 I used Claude Code as a build partner in a repeating loop. The pattern was the same each day:
 
@@ -126,7 +160,7 @@ I used Claude Code as a build partner in a repeating loop. The pattern was the s
 - *"The AI is working with money… we need to set up rules."* This made the guardrails the climax of the demo. (12 October)
 - *"In order to give the slots, Razorpay would need to become the platform managing all the order handling."* This raised the inventory question that led to the "How SeatSaver plugs in" design. (12 October)
 
-### 2.3 How the AI was tested
+### 2.4 How the AI was tested
 
 **The problem with judging AI by eye.** A demo that works once proves very little. To know whether the AI made the right decision consistently, I needed a fixed set of test cases with known correct answers.
 
@@ -147,7 +181,7 @@ I used Claude Code as a build partner in a repeating loop. The pattern was the s
 
 All reports are in [`eval/results/`](eval/results/), and the full analysis is in [`backend.md`](backend.md).
 
-### 2.4 How the images and video were made
+### 2.5 How the images and video were made
 
 **Images (OpenAI).** I needed the same four characters to look consistent across many photographs. The workflow was:
 - One detailed **set-up prompt** at the start of the session, describing each character's age, face, hair, clothes and personality, the studio's look, the photographic style, and strict rules: no text, no logos, and any phone screen blank.
@@ -184,7 +218,21 @@ Each item explains the situation first, then what the AI produced, what I change
 
 **Why.** In a product that handles money, an obviously wrong offer destroys trust faster than a slow one. I also did not want to rely on the prompt alone: prompts can be wrong, so the code check makes sure a single model mistake cannot reach a customer.
 
-### 3.2 Other corrections, by stage
+### 3.2 A strategic example: the AI recommended dropping my product, and I kept it
+
+**Context.** After choosing SeatSaver, I asked AI to challenge the choice. The concern was real: SeatSaver only helps when several things happen together (a late payment, a limited-capacity booking, the seat being resold, and an acceptable alternative existing), and it needs data from the merchant's booking system.
+
+**What the AI produced.** A reassessment recommended **retiring SeatSaver** in favour of "payment objection repair": learning which misunderstandings stop customers paying and correcting the payment page. Separately, I proposed my own alternative, a **reusable Razorpay balance** that customers could spend at the same or another merchant, and had AI investigate it.
+
+**What I decided, and why.**
+- *Payment objection repair:* rejected. A customer's real objection is often price or suitability, which a clearer page does not fix, and the idea overlapped Razorpay's own checkout, Cart Recovery agents and Engage.
+- *Reusable balance (my own idea):* rejected after the investigation. The original merchant would still lose the sale; RBI's prepaid-instrument directions restrict crediting a refund for a card or UPI payment into a wallet; Razorpay already offers same-brand wallet refunds through Engage; and the AI would have no central decision to make. On a weighted comparison I built with AI (breadth, customer benefit, merchant revenue, AI role, feasibility and more), SeatSaver scored **63/100** against **41/100**.
+- *Three ideas from the reviews* (a Payment Exception Resolver, a Refund Promise Auditor and a Payment Capability Doctor) were each useful, but overlapped RAY, the Agentic Dashboard or support tools such as Intercom and Zendesk.
+- *SeatSaver:* kept, but I adopted the AI's valid criticisms instead of ignoring them. The narrow trigger and the under-0.5% frequency are stated openly, and the booking-system dependency became an explicit design: SeatSaver needs only three calls to the merchant's system, with a manual fallback.
+
+**Why.** The brief rewards a clear merchant problem where AI makes a real decision and takes a concrete, verifiable action. SeatSaver met that; the broader alternatives traded a real decision for breadth.
+
+### 3.3 Other corrections, by stage
 
 **Research and design**
 
@@ -227,7 +275,8 @@ Each item explains the situation first, then what the AI produced, what I change
 
 | Area | What AI did | What I decided or did myself |
 |---|---|---|
-| **Problem choice** | Summarised research, explained each concept with an example, drafted the product framework | Chose the segment, the pain point and the idea, using a decision rule I set in advance |
+| **Research** | Read and summarised the Razorpay portfolio, competitors, startups and public reviews, and organised them into comparable cards | Chose the seven questions to investigate, set the evidence rules, and decided which findings to trust and which to discard |
+| **Problem choice** | Explained each concept with an example, drafted the product framework, and argued for alternatives when asked to challenge the choice | Chose the segment, the pain point and the idea using a decision rule set in advance, then kept SeatSaver against an AI recommendation to drop it (section 3.2) |
 | **Product rules** | Proposed designs and wrote them up in detail | Set the non-negotiable rules: same price only, reserve the seat before capturing the money, the AI never writes amounts, and the owner reviews every offer by default |
 | **Architecture** | Wrote the engine, the integrations and the interface | Insisted the backend be proven before any screen was built, and that money-related steps stay in code |
 | **AI model and cost** | Built support for several models | Chose the paid tier with one pinned low-cost model |
@@ -243,6 +292,8 @@ Each item explains the situation first, then what the AI produced, what I change
 
 ### Limitations
 - **Synthetic data only.** Every customer, booking and message is fictional. The approach has not yet been tested with real merchants.
+- **No merchant interviews yet.** The problem rests on documented payment behaviour, competitor research and public reviews. Reviews show real situations, not how often they occur. An interview script is prepared for validation.
+- **A narrow trigger.** Razorpay's own guidance puts late authorisations at under 0.5% of payments, and SeatSaver applies only to the subset with limited capacity. Frequency per merchant and the share of customers who accept an alternative are the first things a pilot must measure.
 - **A small evaluation.** 18 development and 8 held-out cases, one run each. This shows that the decision logic works on designed situations; it does not prove accuracy in the real world. Version 2 of the prompts was rerun only on the most relevant cases, to limit cost.
 - **Speed.** Each AI step takes about 10 to 17 seconds on the chosen model, which is acceptable for a case that has three days to resolve but noticeable in a live demo.
 - **A prototype server.** Data is kept in memory on a single server instance and resets on restart.
@@ -263,10 +314,36 @@ Each item explains the situation first, then what the AI produced, what I change
 | Gemini being slow or unavailable | Timeouts are handled honestly; a cached, demo-safe mode is available; each visitor has a limit on AI calls |
 
 ### How I verified the work
-- **52 automated tests** covering the engine, the guardrails, idempotency, per-visitor sessions and the live activity feed. All pass.
+- **53 automated tests** covering the engine, the guardrails, idempotency, per-visitor sessions and the live activity feed. All pass.
 - **Evaluation reports** for every AI run are saved in [`eval/results/`](eval/results/), with both baselines.
 - **A real Razorpay test payment** was authorised and captured through the Razorpay API, confirming that the money flow works end to end.
 - **Manual walkthroughs** of both parts of the demo in the browser after every significant change, checking the screens, the timing and the links.
 - **Secret scanning** of the code before every commit. No keys or credentials are included anywhere in this repository.
 
 **To reproduce:** `npm install`, then `npm test` for the automated tests and `npm run eval` for the AI evaluation. The evaluation needs a Gemini API key in a local `.env` file, which is not part of this repository.
+
+---
+
+## Sources
+
+The main sources behind the research and the product rules. Reviews are cited as individual accounts, not as measured incidents.
+
+**Razorpay payment behaviour and products**
+- [Late authorisation](https://razorpay.com/docs/payments/payments/late-authorisation) and [how to handle it](https://razorpay.com/docs/payments/payments/late-authorisation/handle)
+- [Capture settings](https://razorpay.com/docs/payments/payments/capture-settings/), [capture API](https://razorpay.com/docs/api/payments/capture) and the [payment timeout guide](https://razorpay.com/learn/payment-timeout/)
+- [Agent Studio](https://razorpay.com/agent-studio/), [RAY on WhatsApp](https://razorpay.com/blog/meet-ray-your-always-on-ai-account-manager-now-live-on-whatsapp/), the [Agentic Platform](https://razorpay.com/blog/razorpay-agentic-platform/) and [Agentic Business Banking](https://razorpay.com/agentic-business-banking/)
+- [Instant Refunds](https://razorpay.com/docs/payments/refunds/instant/) and [Engage wallet refunds](https://razorpay.com/blog/how-razorpay-engage-transforms-customer-retention-with-instant-wallet-refunds/)
+
+**The same problem in other markets**
+- [Xendit delayed webhooks](https://docs.xendit.co/docs/delayed-webhooks/): payment confirmed after an order has expired
+
+**Reviews and public accounts**
+- [G2 reviews of Razorpay](https://www.g2.com/products/razorpay/reviews), [Capterra](https://www.capterra.com/p/179263/Razorpay/reviews/) and [Trustpilot](https://www.trustpilot.com/review/razorpay.com)
+- Reddit threads on [recurring subscription failures](https://www.reddit.com/r/indianstartups/comments/1iukxql/issues_with_razorpay_for_recurring_subscriptions/), [test-mode subscriptions failing until the product was enabled](https://www.reddit.com/r/Razorpay/comments/1vhzgnz/razorpay_subscriptions_in_test_mode_always_fail/), [international payments](https://www.reddit.com/r/indianstartups/comments/1td54mx/razorpay_is_silently_killing_my_international/), [a refund promised but not received](https://www.reddit.com/r/TradingView/comments/1w6ds2j/refund_issue/) and [a stuck settlement](https://www.reddit.com/r/Razorpay_Community/comments/1wuu9ru/razorpay_settlement_stuck_despite_multiple/)
+
+**Regulation (for the reusable-balance alternative)**
+- RBI [Master Directions on Prepaid Payment Instruments](https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=12156) and [on Payment Aggregators](https://www.rbi.org.in/Scripts/BS_ViewMasDirections.aspx?id=12896)
+
+**Competitors and neighbouring products (examples)**
+- [Stripe Smart Retries](https://stripe.com/blog/how-we-built-it-smart-retries), [Churnkey](https://churnkey.co/), [Zenoti waitlists](https://www.zenoti.com/platform/waitlist-management), [Intercom Fin tasks](https://www.intercom.com/help/en/articles/9569407-fin-tasks-explained), and YC companies including [Rex](https://www.ycombinator.com/companies/rex-inc), [Alder](https://www.ycombinator.com/companies/alder) and [Signals](https://www.ycombinator.com/companies/signals)
+

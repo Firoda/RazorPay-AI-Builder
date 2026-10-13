@@ -1,6 +1,6 @@
 # SeatSaver build timeline, 3 to 13 October 2026
 
-This is the detailed, day-by-day companion to the main [AI Build Log](AI_build_log.md). Each day records the premise, the objective, the approach, how AI was used, what went wrong and what I changed.
+This is the detailed, day-by-day companion to the main [AI Build Log](AI_build_log.md). Each day records the premise, the objective, the approach, how AI was used, what went wrong and what I changed. Files under `research/` and the research notes mentioned in the "Output" lines are my private working notes; the key sources are cited at the end of the main log.
 
 **Builder:** Aditya Firoda · **Track:** 2, Recover and Grow with AI · **Period:** 3 to 13 October 2026
 
@@ -9,10 +9,11 @@ SeatSaver rescues a booking when a customer's payment is confirmed late, after t
 ## Tools used
 
 - **Claude (Claude Code):** research synthesis, product framework, system design, backend and frontend code, test runs, documentation.
-- **[Research tool used on 3 to 5 October]:** reading and summarising public sources, reviews and competitor material.
+- **Google Search (manual):** finding reviews, official documentation, competitors and regulations, often with site-specific searches such as `site:g2.com/products/razorpay/reviews`. Every source was opened and read directly.
+- **Claude as a research assistant:** summarising and comparing what I found, and arguing for alternatives when I asked it to challenge my choice.
 - **Gemini 3.8 Flash (Google AI Studio):** the AI inside the product. It reads the customer's message, ranks feasible sessions and drafts the offer.
 - **Google AI Studio:** first deployment of the prototype.
-- **OpenAI image generation:** the photographs of the characters and the studio.
+- **OpenAI image generation (ChatGPT):** the photographs of the characters and the studio.
 - **Google Flow (Veo):** the three short video clips that open the story.
 - **Razorpay test mode:** real test payments with manual capture, so the money flow is genuine rather than mocked.
 
@@ -29,12 +30,18 @@ SeatSaver rescues a booking when a customer's payment is confirmed late, after t
 
 **Approach**
 - Read the brief line by line and turned its seven Track 2 questions into a checklist. Every later decision was tested against it.
-- Mapped Razorpay's current AI products: Agent Studio, the Agentic Platform and RAY on WhatsApp. Agent Studio already lists payment retry, drop-off recovery, cart recovery and dispute handling.
+- Mapped Razorpay's India-facing portfolio as about 24 product families, from payment acceptance, Payment Links, Subscriptions, Smart Collect, Magic Checkout, refunds, settlements, disputes and Route, through POS, Engage, RazorpayX, payroll and Capital, to the merchant AI layer (RAY, Agentic Onboarding, Integration and Dashboard) and Agent Studio's operational agents. For each family I noted one improvement worth considering and what it would depend on.
+- Checked where Razorpay's own AI already overlaps an idea, because that is where a submission would be weakest:
+  - **RAY** on WhatsApp already advertises payment summaries, recovery links, diagnostics and actions, so a WhatsApp or voice interface is not a differentiator.
+  - **The Agentic Dashboard** already interprets statements and complaints and creates recovery links.
+  - **Agent Studio** already covers cart, subscription, mandate and dispute recovery.
+  - **Risk review** already has a live dashboard with document-level status and AI pre-analysis.
+  - **Receivables agents** already track and follow up, and **Instant Refunds** and **Engage wallet refunds** already restore purchasing power for many customers.
 - Studied the payment mechanics that any idea would depend on: webhooks, payment links, refunds, reconciliation, and how a late-authorised payment behaves.
 - Set a rule for myself early: if Razorpay already ships it, I need a sharper problem, not a better chatbot.
 
 **AI leverage**
-- I used AI to read and summarise seventeen official and third-party sources into one note on platform boundaries: what the gateway can see, what it cannot, and what a prototype can honestly claim.
+- I used AI to read and summarise the Razorpay portfolio and seventeen official and third-party sources into one note on platform boundaries: what the gateway can see, what it cannot, and what a prototype can honestly claim.
 - This gave me a complete picture of the landscape in a single day, which let me spend my own time on judgement rather than on reading documentation.
 
 **Missteps**
@@ -46,7 +53,7 @@ SeatSaver rescues a booking when a customer's payment is confirmed late, after t
 - Decided the prototype would be a standalone companion product that uses real Razorpay test APIs, rather than an Agent Studio extension.
 
 **Output**
-- `research/platform_findings.md`
+- `research/platform_findings.md` and the product map in my research notes.
 
 ---
 
@@ -59,7 +66,27 @@ SeatSaver rescues a booking when a customer's payment is confirmed late, after t
 - Build a list of concrete merchant problems with evidence behind each one, and understand them from both the merchant's and the customer's side.
 
 **Approach**
-- Collected merchant and customer complaints from public reviews and forums across platforms. [Add the platforms, volume and main themes from the reviews research notes.]
+- **Read reviews and public complaints about Razorpay** on G2, Capterra, Trustpilot, Reddit (r/Razorpay, r/indianstartups, r/UPI, r/IndiaBusiness and a TradingView thread) and public LinkedIn escalations. I read individual review text and, where available, the company's reply and later updates.
+- **Set rules for reading them**, because reviews are easy to over-interpret:
+  - Merchant and developer problems were kept separate from end-customer complaints.
+  - Cross-posts and copied reviews were counted once, and posts promoting a related product were downgraded.
+  - Resolved cases were kept, because a fixed problem can still reveal a confusing diagnostic step.
+  - Positive reviews with specific criticisms were kept as counter-evidence.
+  - No complaint rate was calculated, because the sample does not support one.
+- **Grouped what I found into eight recurring situations:**
+
+| # | Situation in the reviews | What it suggested |
+|---|---|---|
+| 1 | Subscription debits failing with reasons the customer disputed | Work out the next supported step (re-authorise, retry, wait, escalate) instead of guessing a reason |
+| 2 | A payment captured while the subscription or app access stayed inactive | Link payment, mandate, subscription and access before asking for another payment |
+| 3 | A test-mode "server error" that was really a product not yet enabled on the account | Check account capabilities first; AI cannot approve KYC |
+| 4 | International cards declined until support enabled a setting | Route the evidence to the right team; never weaken authentication by default |
+| 5 | A refund promised by the merchant's support that did not arrive | Compare what was promised with the refund records that actually exist |
+| 6 | Settlement files accurate but hard to export; settlements reported as stuck | A discrepancy-specific explanation, not another dashboard |
+| 7 | Dispute evidence windows felt tight, and rejections were poorly explained | Show missing proof and deadlines; Razorpay's Dispute Responder already overlaps |
+| 8 | Repeated explanations to support and unclear ownership of a ticket | One case timeline, the exact missing information and a real escalation path |
+
+- **The defensible conclusion** was not that Razorpay fails. Several reviews praised its support, reliability and reporting. It was that **exceptions between a payment and the customer's outcome are handled unevenly**, which is exactly the gap a late-paid booking falls into.
 - Grouped the evidence into seven problem areas, each describing a sale where the customer's intent still exists but the operational state is unclear:
 
 | # | Problem area | What goes wrong | Evidence found |
@@ -73,7 +100,7 @@ SeatSaver rescues a booking when a customer's payment is confirmed late, after t
 | 7 | Refund that loses the next sale | A slow or unclear refund damages the customer's trust | Refund communication documentation |
 
 - For each area I wrote down the trigger, the merchant's current workaround, the data needed, and whether AI would genuinely add something a rule could not.
-- Wrote an evidence standard before drawing conclusions: documented fact, vendor claim, anecdote and hypothesis are kept separate and labelled.
+- Wrote an evidence standard before drawing conclusions. Official documentation shows what is supported; vendor pages and YC profiles show advertised competition, not proven performance; news coverage helps discovery only; reviews supply concrete situations, not frequency or root cause; and my own concepts and examples are proposals.
 
 **AI leverage**
 - AI helped me organise a large amount of scattered material into a consistent structure: problem statement, evidence, workaround, signals, why AI, closest existing solution, and risks.
@@ -86,7 +113,7 @@ SeatSaver rescues a booking when a customer's payment is confirmed late, after t
 - Removed every India-wide statistic I could not verify. The problem would be justified by documented mechanisms and real complaints, and the opportunity size would be stated as a hypothesis to test.
 
 **Output**
-- `research/merchant_problems.md` and my reviews research notes.
+- `research/merchant_problems.md` and the review findings in my research notes.
 
 ---
 
@@ -106,6 +133,13 @@ SeatSaver rescues a booking when a customer's payment is confirmed late, after t
   - Subscription retention: Chargebee, Churnkey.
   - Backup payment methods: dLocal, Xendit.
 - **Studied other markets.** North America optimises the customer relationship, not only the authorisation. Europe treats recovery as an optimisation problem with several goals at once. Latin America's instant payment rails change the workflow. In Africa, failure handling differs widely between providers. Southeast Asia showed the most useful lesson: a payment can succeed while the order itself is no longer viable.
+- **Checked specialists in each neighbouring category**, so that no idea would be pitched as new when it was not:
+  - *Receivables and deductions:* Rex, Alder, Glimpse, HighRadius, Chaser and Zoho Books.
+  - *Returns and customer service:* Gorgias, ReturnGO, Loop, Narvar, Signals, REVER, Claimlane, Intercom Fin and Zendesk.
+  - *Bookings and services:* Square Appointments, Fresha, Zenoti, Toma and CentralComs. This ruled out claiming that preference-aware rescheduling is itself new.
+  - *Approved extra work missing from bills:* Addenly, Clearstory, Procore, Siteline, Accelo and others.
+  - *Wallets and refunds:* Razorpay Engage and Wallet as a Service, Pine Labs, Amazon Pay Balance and Cashfree.
+  - *Measurement:* Statsig for experiment design, Braze, Contentsquare and Baymard.
 - **Reviewed fifteen startups** that set the current baseline, including Rex, Alder and Glimpse (finance exceptions and deductions), FlyCode (subscription retries), Signals, REVER, ReturnGO and Loop (returns and post-purchase), Claimlane (warranty claims), and Zenoti (filling cancelled slots). The conclusion was that "find the blocker, then act" is already a known pattern, so the distinctiveness had to come from a narrower decision.
 - **Listed the ideas.** Combining the merchant problems, the international patterns and the startup review, I ended up with about ten distinct ideas:
 
@@ -302,6 +336,11 @@ SeatSaver rescues a booking when a customer's payment is confirmed late, after t
 - Walked through the deployed demo as a first-time viewer with no background on late payments.
 - Checked it against the brief's guidance for the video and prototype: show the product rather than explaining every detail.
 - Listed every point where a newcomer would get lost: the queue assumed the viewer already understood late authorisation, the case page was dense, and the most important moment, reserving the seat before capturing the money, was easy to miss.
+- **Stress-tested the problem choice itself**, because a better demo cannot rescue the wrong problem. I put SeatSaver up against the strongest objections and alternatives:
+  - *Is the trigger too narrow, and does it need the merchant's inventory?* Accepted as real constraints. Razorpay's own guidance puts late authorisations at under 0.5% of payments overall, so SeatSaver is a focused exception, not a broad product. It needs a small connection to the merchant's booking system.
+  - *A lighter alternative, "payment objection repair":* learn which misunderstandings stop customers paying and fix the payment page. An AI reassessment recommended switching to it. I rejected it, because a price or suitability objection is often the real reason, and the idea overlapped Razorpay's own checkout and Engage tools.
+  - *My own idea of a reusable Razorpay balance:* keep the confirmed money as credit the customer could spend at the same or another merchant. Investigating it showed the original merchant still loses the sale, RBI's prepaid-instrument rules restrict crediting a refund for a card or UPI payment into a wallet, and the AI would have no central decision to make. On a weighted comparison, SeatSaver scored 63 out of 100 and the balance idea 41.
+  - *Ideas from the reviews:* a Payment Exception Resolver, a Refund Promise Auditor and a Payment Capability Doctor. Each was useful, but overlapped RAY, the Agentic Dashboard or support tools such as Intercom and Zendesk, and needed integrations I could not demonstrate honestly.
 
 **AI leverage**
 - I asked AI to review the demo against the judging criteria and list what a first-time viewer would not understand. This made the review systematic instead of relying on my own familiarity with the product.
@@ -310,10 +349,11 @@ SeatSaver rescues a booking when a customer's payment is confirmed late, after t
 - I had optimised for feature completeness and correctness. The result was a product that worked but read like theory.
 
 **Recalibration**
+- Kept SeatSaver, with its trade-offs written down rather than hidden: a narrow trigger, a booking-system dependency and an unmeasured frequency.
 - Decided that the demo must tell the story first and then show the product: the viewer should feel the problem before seeing the solution.
 
 **Output**
-- A list of comprehension gaps, used to plan the redesign.
+- A list of comprehension gaps, used to plan the redesign, and the alternatives comparison in my research notes.
 
 ---
 
