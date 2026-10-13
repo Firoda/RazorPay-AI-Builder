@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Lock, LockOpen, Play, RotateCcw, SkipForward } from "lucide-react";
-import { isMuted, onMuteChange, play, startMusic, stopMusic, type Cue } from "../../../shared/sound";
+import { isMuted, onMuteChange, play, type Cue } from "../../../shared/sound";
 import { gsap } from "../engine/scroll";
 import { useStory } from "../engine/storyState";
 import { Checkout, ChatHeader, ClassCard, LockNotification, Phone, SeatRow, SmsNotification } from "../mockups/Mockups";
@@ -74,10 +74,6 @@ export function FilmStory() {
   const { started } = useStory();
   const [screen, setScreen] = useState<Screen>("film");
   const [run, setRun] = useState(0); // bump to replay
-
-  useEffect(() => {
-    if (started) startMusic(0.5);
-  }, [started]);
 
   return (
     <div className="film-root">
@@ -397,7 +393,6 @@ function End() {
     veil.style.setProperty("--y", `${r.top + r.height / 2}px`);
     document.body.appendChild(veil);
     play("whoosh");
-    stopMusic(0.6);
     gsap.fromTo(veil, { clipPath: "circle(0px at var(--x) var(--y))" }, {
       clipPath: "circle(150vmax at var(--x) var(--y))", duration: 0.7, ease: "power2.in",
       onComplete: () => window.location.assign(DEMO_URL),
