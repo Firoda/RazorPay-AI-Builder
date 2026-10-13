@@ -2,7 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 /** Minimal hash router: "#/case/case_1" → ["case", "case_1"]. */
 export function useHashRoute(): string[] {
-  const parse = () => (window.location.hash.replace(/^#\/?/, "") || "").split("/").filter(Boolean);
+  // Ignore any "?query" in the hash (e.g. "#/welcome?from=story" is the welcome page).
+  const parse = () => (window.location.hash.replace(/^#\/?/, "").split("?")[0] || "").split("/").filter(Boolean);
   const [parts, setParts] = useState<string[]>(parse);
   useEffect(() => {
     const on = () => setParts(parse());

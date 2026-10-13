@@ -1,14 +1,14 @@
 import { useEffect } from "react";
-import { refreshSoon } from "./engine/scroll";
-import { Scene01, Scene02, Scene03, Scene04, Scene05 } from "./scenes/ScenesA";
-import { Scene06a, Scene06b, Scene07, Scene08, Scene09, Scene10 } from "./scenes/ScenesB";
+import { FilmStory } from "./scenes/Film";
 import { BuilderBadge } from "./ui/Brand";
-import { ChapterDots, ClockPill, IdleNudge, IntroGate, MuteToggle, ProgressLine, SkipLink } from "./ui/Chrome";
+import { IntroGate, MuteToggle, SkipLink } from "./ui/Chrome";
 import { LensToggle } from "./ui/Lens";
+
+// Portal 1: tap to begin → a ~26 s film (Google Flow clips + animated overlays) → how it works today → the cliffhanger.
+// The earlier scroll-driven scenes (scenes/ScenesA, ScenesB) are kept in the repo but no longer mounted.
 
 export function App() {
   useEffect(() => {
-    document.fonts?.ready.then(refreshSoon);
     // Pre-warm the server so Portal 2 opens fast after the story.
     fetch("/api/health").catch(() => undefined);
   }, []);
@@ -16,31 +16,15 @@ export function App() {
   return (
     <>
       <IntroGate />
-      <ProgressLine />
       <header className="chrome-top">
         <BuilderBadge />
-        <ClockPill />
         <div className="chrome-right">
           <SkipLink />
           <MuteToggle />
         </div>
       </header>
-      <ChapterDots />
-      <IdleNudge />
       <div className="chrome-bottom-right"><LensToggle /></div>
-      <main>
-        <Scene01 />
-        <Scene02 />
-        <Scene03 />
-        <Scene04 />
-        <Scene05 />
-        <Scene06a />
-        <Scene06b />
-        <Scene07 />
-        <Scene08 />
-        <Scene09 />
-        <Scene10 />
-      </main>
+      <FilmStory />
     </>
   );
 }

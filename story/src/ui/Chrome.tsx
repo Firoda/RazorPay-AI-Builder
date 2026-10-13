@@ -18,9 +18,7 @@ export function IntroGate() {
     } else {
       setMuted(true);
     }
-    gsap.to(ref.current, { autoAlpha: 0, duration: 0.6, ease: "power2.out", onComplete: () => setStory({ started: true }) });
-    document.documentElement.classList.remove("locked");
-    startSmoothScroll();
+    setStory({ started: true }); // the film fades itself in; no need to wait for an exit animation
   };
   useEffect(() => {
     document.documentElement.classList.add("locked");
@@ -43,7 +41,7 @@ export function IntroGate() {
         <span className="gate-sub"><Volume2 size={16} /> best with sound</span>
       </button>
       <button className="gate-mute" onClick={() => begin(false)}>Continue without sound</button>
-      <div className="gate-foot">A 2-minute story · Razorpay × ISB Build Challenge</div>
+      <div className="gate-foot">A 1-minute story · Razorpay × ISB Build Challenge</div>
     </div>
   );
 }

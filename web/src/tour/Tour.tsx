@@ -41,6 +41,11 @@ export function useTour(): TourApi {
 }
 
 function load(): TourState {
+  // Arriving from the story (Portal 1) always starts a fresh tour on the welcome page.
+  if (/[?&]from=story\b/.test(window.location.hash)) {
+    window.history.replaceState(null, "", `${window.location.pathname}#/welcome`);
+    return { status: "idle", step: 0 };
+  }
   try {
     const raw = sessionStorage.getItem(KEY);
     if (raw) return JSON.parse(raw) as TourState;

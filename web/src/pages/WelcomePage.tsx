@@ -12,7 +12,7 @@ import { useTour } from "../tour/Tour";
 
 const card: Variants = {
   hidden: { opacity: 0, y: 24 },
-  show: (i: number) => ({ opacity: 1, y: 0, transition: { delay: 0.25 + i * 0.9, duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } }),
+  show: (i: number) => ({ opacity: 1, y: 0, transition: { delay: 0.15 + i * 0.5, duration: 0.45, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } }),
 };
 
 export function WelcomePage() {
@@ -33,9 +33,8 @@ export function WelcomePage() {
       setSource(s.payment.source);
       setPaymentId(s.payment.id);
       tour.setCase(s.caseId, s.payment.source);
-      setTimeout(() => play("tick"), 900);
-      setTimeout(() => play("ding"), 2700);
-      setTimeout(() => setPhase("ready"), 3600);
+      setTimeout(() => play("ding"), 500);
+      setTimeout(() => setPhase("ready"), 1300);
     } catch (err) {
       setError((err as Error).message);
       setPhase("start");
@@ -58,9 +57,9 @@ export function WelcomePage() {
 
         {phase === "start" && (
           <div className="stack" style={{ alignItems: "flex-start" }}>
-            <p className="welcome-lead">Her payment is done and held. Her seat is gone. Let's see what SeatSaver does with it.</p>
+            <p className="welcome-lead">Her payment is done and held. Let's see what SeatSaver does with it.</p>
             <button className="btn primary welcome-start" onClick={start}><Play size={18} /> Start</button>
-            <span className="muted small">Sound on · about 3 minutes · you can leave the guide anytime</span>
+            <span className="muted small">Sound on · about 2 minutes · you can leave the guide anytime</span>
             {error && <Banner tone="danger">{error}</Banner>}
           </div>
         )}
@@ -72,7 +71,7 @@ export function WelcomePage() {
                 <RazorpayLogo height={18} />
                 <span className={`tag ${real ? "test" : "sim"}`}>{real ? "Test mode · no real money" : "SIMULATED"}</span>
               </div>
-              <div className="w-card-title">{real ? "We made a real Razorpay test payment as Priya." : "A replay of a real Razorpay test payment."}</div>
+              <div className="w-card-title">{real ? "We made a real Razorpay test payment as Priya, the customer." : "A replay of a real Razorpay test payment by Priya, the customer."}</div>
               <div className="w-receipt">
                 <span className="num w-amount">₹2,000</span>
                 <span className="muted small">Netbanking{paymentId && real ? ` · ${paymentId}` : ""}</span>
@@ -80,21 +79,8 @@ export function WelcomePage() {
               </div>
             </motion.div>
 
-            <motion.div className="w-card" variants={card} initial="hidden" animate="show" custom={1}>
-              <div className="w-card-title">The bank confirmed it two hours late. Her seat was already gone.</div>
-              <div className="w-seats" aria-label="8 of 8 seats taken">
-                {Array.from({ length: 8 }, (_, i) => <span key={i} className="w-seat" />)}
-                <span className="w-full num">8 / 8 · FULL</span>
-              </div>
-            </motion.div>
-
-            <motion.div className="w-card w-chat" variants={card} initial="hidden" animate="show" custom={2}>
-              <div className="w-chat-head"><Avatar who="priya" size={28} /> <b>Priya</b> <span className="muted small">8:00 AM</span></div>
-              <div className="w-bubble">Money got debited but no booking!! I can only do Sunday mornings and I really want Arjun sir 🙏</div>
-            </motion.div>
-
-            <motion.p className="w-intro" variants={card} initial="hidden" animate="show" custom={3}>
-              <b>SeatSaver</b> turns a late payment into a seat she'll actually take.
+            <motion.p className="w-intro" variants={card} initial="hidden" animate="show" custom={1}>
+              Her seat is gone. <b>SeatSaver</b> turns this held payment into a seat she'll actually take.
             </motion.p>
 
             {phase === "ready" && (
@@ -103,7 +89,7 @@ export function WelcomePage() {
                   className="btn primary welcome-start breathe"
                   onClick={() => tour.caseId && tour.begin(tour.caseId, tour.paymentSource)}
                 >
-                  You're Ritu. Open your morning →
+                  You're Ritu (owner of Clay &amp; Co.). Open your morning →
                 </button>
                 <span className="muted small">Gemini is already reading Priya's message in the background.</span>
               </motion.div>

@@ -40,7 +40,7 @@ export const STEPS: TourStep[] = [
   },
   {
     id: "case", persona: "ritu", route: "queue", target: '[data-tour="case-card"]',
-    title: "Here's Priya",
+    title: "Here's Priya, the customer",
     body: "Money held, seat gone. Click her card to see what SeatSaver suggests.",
     advance: { event: "nav:case", hint: "Click Priya's card" },
   },
@@ -68,14 +68,14 @@ export const STEPS: TourStep[] = [
   {
     id: "approve", persona: "ritu", route: "case", target: '[data-tour="decision"]',
     title: "Nothing moves without Ritu",
-    body: "SeatSaver drafted the offer. Ritu stays in control. Watch her approve.",
+    body: "SeatSaver drafted the offer. Ritu, the studio owner, stays in control. Watch her approve.",
     waitFor: (d) => d.state === "MERCHANT_REVIEW",
     action: "approve",
     nextText: "▶ Watch Ritu approve",
   },
   {
     id: "book", persona: "priya", route: "case", target: '[data-tour="phone"]',
-    title: "Now it's Priya's turn",
+    title: "Now it's Priya's turn (the customer)",
     body: "Same price. No extra charge. A refund is still available. Watch her choose.",
     waitFor: (d) => d.state === "OFFER_SENT",
     action: "book",

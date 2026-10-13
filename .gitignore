@@ -10,5 +10,6 @@ coverage/
 eval/results/*.json
 story/dist/
 
-# Original OpenAI images (~40 MB); the sites ship optimised copies in story/public/img and web/public/img
+# Original OpenAI images and Flow clips; the sites ship copies in story/public/{img,film} and web/public/img
 OpenAI_images/**/*.png
+OpenAI_images/**/*.mp4
