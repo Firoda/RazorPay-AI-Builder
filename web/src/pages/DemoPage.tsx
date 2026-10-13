@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Banner, BusyLine } from "../components/ui";
-import { api, getAdminToken, setAdminToken } from "../lib/api";
+import { api } from "../lib/api";
 import { navigate, useAction, usePolling } from "../lib/hooks";
 import { formatIST } from "../lib/labels";
 import type { ScenarioInfo, Studio } from "../lib/types";
@@ -13,14 +13,14 @@ export function DemoPage() {
   const [picked, setPicked] = useState("G01");
   const [lastEvent, setLastEvent] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
-  const [token, setToken] = useState(getAdminToken());
   const { data: studio, refresh: refreshStudio } = usePolling<Studio>(() => api.studio(), [], 5000);
   const { data: health, refresh: refreshHealth } = usePolling(() => api.health(), [], 5000);
-  const [seatSession, setSeatSession] = useState("S-1018-AM");
+  // Session ids follow the live calendar's dates, so default to the first Sunday-morning class with Arjun.
+  const [pickedSeatSession, setSeatSession] = useState("");
 
   useEffect(() => {
     api.demo.scenarios().then(setScenarios).catch((e) => setNote(String(e.message)));
-  }, [token]);
+  }, []);
 
   const done = (msg: string) => {
     setNote(msg);
@@ -35,6 +35,10 @@ export function DemoPage() {
       if (r.caseId) navigate(`/case/${r.caseId}`);
     });
 
+  const seatSession = pickedSeatSession
+    || studio?.sessions.find((s) => s.id.endsWith("-AM") && s.instructor === "Arjun" && s.capacity > s.booked && new Date(`${s.date}T12:00:00+05:30`).getUTCDay() === 0)?.id
+    || studio?.sessions[0]?.id
+    || "";
   const session = studio?.sessions.find((s) => s.id === seatSession);
 
   return (
@@ -126,10 +130,6 @@ export function DemoPage() {
               await api.demo.reset();
               done("Everything reset to the seeded studio data.");
             })}>Reset everything</button>
-            <label className="field">
-              Admin token <span className="muted small">(only needed on the hosted demo)</span>
-              <input type="password" value={token} onChange={(e) => { setToken(e.target.value); setAdminToken(e.target.value); }} />
-            </label>
           </div>
         </section>
       </div>

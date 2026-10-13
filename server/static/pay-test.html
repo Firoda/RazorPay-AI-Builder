@@ -22,7 +22,7 @@
   <div class="card">
     <span class="tag">Razorpay TEST mode · no real money</span>
     <h2>Create a real authorised test payment</h2>
-    <p class="muted">Creates a manual-capture order for the hero booking (₹2,000, Sun 11 Oct 10 AM, now full), opens Razorpay Checkout,
+    <p class="muted">Creates a manual-capture order for the hero booking (₹2,000 for Priya's Sunday 10 AM class, which is now full), opens Razorpay Checkout,
       and hands the resulting <b>authorized</b> payment to SeatSaver. Only the "late" timing of the authorisation is simulated.</p>
     <label class="muted">Scenario <select id="scenario"><option>G01</option><option>G11</option><option>G13</option><option>G28</option></select></label>
     <p><button id="pay">Pay ₹2,000 (test)</button></p>
@@ -71,7 +71,14 @@
       rzp.on("payment.failed", (f) => log({ error: "payment failed", detail: f.error }));
       rzp.open();
     } catch (err) {
-      log({ error: String(err.message || err) });
+      const msg = String(err.message || err);
+      if (/admin token required/i.test(msg)) {
+        log(poolMode
+          ? "This is the operator tool for stocking the payment pool. Add &admin=<your DEMO_ADMIN_TOKEN> to the end of this page's address and try again."
+          : "Please open the demo first, so you get your own private sandbox: go to " + location.origin + "/app/ and then use More → Demo controls → Make a real Razorpay test payment.");
+      } else {
+        log({ error: msg });
+      }
       e.target.disabled = false;
     }
   };

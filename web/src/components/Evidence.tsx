@@ -15,9 +15,11 @@ export function ConstraintChips({ d }: { d: CaseDetail }) {
       <section className="card" data-tour="needs">
         <div className="card-head"><h3>What the customer needs</h3></div>
         <div className="card-body muted">
-          {d.messages.some((m) => m.direction === "inbound")
-            ? "The AI hasn't read the customer's messages for this case."
-            : "Waiting for the customer to say what works for them."}
+          {["ESCALATED", "RELEASED", "NO_ACTION", "RESTORE_PROPOSED", "AUTO_REFUNDED"].includes(d.state)
+            ? "No AI reading was needed. A code check decided this case before the AI step (see the decision above)."
+            : d.messages.some((m) => m.direction === "inbound")
+              ? "The AI hasn't read the customer's messages for this case yet."
+              : "Waiting for the customer to say what works for them."}
         </div>
       </section>
     );

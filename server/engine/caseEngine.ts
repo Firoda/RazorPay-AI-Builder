@@ -98,27 +98,44 @@ export class CaseEngine {
       return { status: "case_created", caseId: c.id };
     }
 
+    this.confirmPayment(c, payment);
     const elig = checkEligibility(s, payment);
     s.log("system", "eligibility.checked", c.id, elig);
     switch (elig.kind) {
       case "no_action":
         this.transition(c, "NO_ACTION", { decision: "no_action", reason: elig.reason });
+        if (elig.reason === "payment_not_authorized") this.replyIfWritten(c, "not_confirmed");
+        if (elig.reason === "refund_in_flight") this.replyIfWritten(c, "refund_on_way");
         break;
       case "release":
         this.release(c, elig.reason, true);
         break;
       case "escalate":
         this.escalate(c, elig.reason);
+        this.replyIfWritten(c, "holding");
         break;
       case "restore":
         c.offeredSessionIds = [c.originalSessionId];
         this.transition(c, "RESTORE_PROPOSED", { decision: "restore_original", reason: "original_seat_free" });
+        this.replyIfWritten(c, "holding");
         break;
       case "eligible":
         c.moneyMode = elig.moneyMode;
-        this.send(c, this.fill(c, template("notice", this.lang(c))), "template");
-        this.transition(c, "AWAITING_CUSTOMER");
-        await this.runProposal(c);
+        if (!this.inbound(c).verified.length) {
+          // The customer hasn't written yet: ask what works for them.
+          this.send(c, this.fill(c, template("notice", this.lang(c))), "template");
+          this.transition(c, "AWAITING_CUSTOMER");
+          await this.runProposal(c);
+        } else {
+          // The customer has written: decide first, then reply once. A release, a question or an offer carries
+          // its own message; if the case waits for the owner instead, acknowledge the customer so they aren't left hanging.
+          this.transition(c, "AWAITING_CUSTOMER");
+          const sentBefore = this.outboundCount(c);
+          await this.runProposal(c);
+          if (this.outboundCount(c) === sentBefore && (c.state === "MERCHANT_REVIEW" || c.state === "ESCALATED")) {
+            this.send(c, this.fill(c, template("notice_ack", this.lang(c))), "template");
+          }
+        }
         break;
     }
     return { status: "case_created", caseId: c.id };
@@ -571,7 +588,33 @@ export class CaseEngine {
   private release(c: RescueCase, reason: string, notify: boolean): void {
     if (c.moneyMode === "already_captured") return this.escalate(c, "refund_review_needed");
     this.transition(c, "RELEASED", { decision: "release_refund", reason });
-    if (notify) this.send(c, this.fill(c, template("released", this.lang(c))), "template", { force: true });
+    if (notify) this.send(c, this.fill(c, template(releaseTemplate(reason), this.lang(c))), "template", { force: true });
+  }
+
+  /** When a code check decides the case, a customer who wrote to us still gets an answer. */
+  private replyIfWritten(c: RescueCase, key: Parameters<typeof template>[0]): void {
+    if (this.inbound(c).verified.length) this.send(c, this.fill(c, template(key, this.lang(c))), "template");
+  }
+
+  private outboundCount(c: RescueCase): number {
+    return this.s.messages.filter((m) => m.caseId === c.id && m.direction === "outbound").length;
+  }
+
+  /**
+   * Tells the customer their late payment has arrived, timestamped when the bank confirmed it, so every chat
+   * starts with that fact. It is informational: it doesn't count towards the contact limit.
+   */
+  private confirmPayment(c: RescueCase, payment: Payment): void {
+    if (c.stopContact || !["authorized", "captured"].includes(payment.status) || payment.refundStatus !== "none") return;
+    const at = payment.authorizedAt ?? this.s.nowIso();
+    const msg: ChatMessage = {
+      id: this.s.nextId("msg"), caseId: c.id, customerId: c.customerId, direction: "outbound",
+      text: this.fill(c, template("confirmed", this.lang(c))), at, kind: "system",
+    };
+    const i = this.s.messages.findIndex((m) => m.customerId === c.customerId && m.at > at);
+    if (i < 0) this.s.messages.push(msg);
+    else this.s.messages.splice(i, 0, msg);
+    this.s.log("system", "customer.payment_confirmed_notice", c.id, { at });
   }
 
   private ask(c: RescueCase): void {
@@ -680,5 +723,17 @@ export class CaseEngine {
     return this.s.learning
       .filter((r) => r.caseId !== c.id && r.constraintTags.some((t) => types.has(t.split(":")[1] as never)))
       .slice(-3);
+  }
+}
+
+/** The customer-facing wording depends on why the payment is being released. */
+function releaseTemplate(reason: string): Parameters<typeof template>[0] {
+  switch (reason) {
+    case "customer_requested_refund": return "released";
+    case "duplicate_payment": return "released_duplicate";
+    case "original_slot_only": return "released_original_only";
+    case "no_feasible_option":
+    case "ai_recommended_release": return "released_no_option";
+    default: return "released_generic";
   }
 }
