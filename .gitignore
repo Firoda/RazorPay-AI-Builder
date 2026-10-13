@@ -13,3 +13,6 @@ story/dist/
 # Original OpenAI images and Flow clips; the sites ship copies in story/public/{img,film} and web/public/img
 OpenAI_images/**/*.png
 OpenAI_images/**/*.mp4
+
+# Source for the product note PDF (the PDF itself is committed at the repo root)
+product_note/
